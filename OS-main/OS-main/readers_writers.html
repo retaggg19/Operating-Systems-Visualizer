@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Readers-Writers Problem</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #f5f5f7;
+            --container-bg: white;
+            --text-color: #333;
+            --text-secondary: #666;
+            --card-bg: #f8f9fa;
+            --card-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            --border-color: #ddd;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --container-bg: #2d2d2d;
+            --text-color: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --card-bg: #3a3a3a;
+            --card-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            --border-color: #555;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .navbar {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background-size: 200% 200%;
+      padding: 20px 0;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-radius: 0 0 30px 30px;
+      margin-bottom: 20px;
+      animation: gradientShift 8s ease infinite, slideDown 0.8s ease-out;
+    }
+    
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
+    @keyframes slideDown {
+      from {
+        transform: translateY(-100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0 30px;
+      position: relative;
+      gap: 40px;
+      animation: fadeInUp 1s ease-out 0.3s both;
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .nav-brand {
+      color: white;
+      font-size: 1.8em;
+      font-weight: 800;
+      text-decoration: none;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      letter-spacing: -0.5px;
+      transition: all 0.3s ease;
+      animation: pulse 2s ease-in-out infinite alternate;
+    }
+    .nav-brand:hover {
+      transform: scale(1.05) rotate(2deg);
+      text-shadow: 0 4px 8px rgba(0,0,0,0.4);
+      animation-play-state: paused;
+    }
+    
+    @keyframes pulse {
+      from {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      }
+      to {
+        text-shadow: 0 4px 12px rgba(255,255,255,0.3);
+      }
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 15px;
+      background: rgba(255,255,255,0.1);
+      padding: 10px 15px;
+      border-radius: 30px;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    .nav-links:hover {
+      background: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-3px); }
+    }
+    
+    .nav-link {
+      color: white;
+      text-decoration: none;
+      padding: 12px 20px;
+      border-radius: 30px;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      position: relative;
+      overflow: hidden;
+      animation: slideInFromLeft 0.6s ease-out forwards;
+      opacity: 0;
+    }
+    
+    .nav-link:nth-child(1) { animation-delay: 0.1s; }
+    .nav-link:nth-child(2) { animation-delay: 0.2s; }
+    .nav-link:nth-child(3) { animation-delay: 0.3s; }
+    .nav-link:nth-child(4) { animation-delay: 0.4s; }
+    .nav-link:nth-child(5) { animation-delay: 0.5s; }
+    .nav-link:nth-child(6) { animation-delay: 0.6s; }
+    .nav-link:nth-child(7) { animation-delay: 0.7s; }
+    
+    @keyframes slideInFromLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    .nav-link::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    .nav-link:hover::before {
+      left: 100%;
+    }
+    .nav-link:hover {
+      background: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .nav-link.active {
+      background: rgba(255,255,255,0.3);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    
+    .theme-toggle {
+        background: var(--container-bg);
+        border: 3px solid #17a2b8;
+        color: #17a2b8;
+        padding: 12px 20px;
+        border-radius: 30px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        font-size: 1.1em;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        min-width: 120px;
+        animation: bounceIn 1s ease-out 0.8s both, glow 2s ease-in-out infinite alternate;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .theme-toggle::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(23, 162, 184, 0.3);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        transition: all 0.3s ease;
+    }
+    
+    .theme-toggle:hover {
+        background: #17a2b8;
+        color: white;
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 6px 12px rgba(23, 162, 184, 0.4);
+        animation-play-state: paused;
+    }
+    
+    .theme-toggle:hover::after {
+        width: 100%;
+        height: 100%;
+    }
+    
+    @keyframes bounceIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.3) translateX(50px);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.05) translateX(0);
+      }
+      70% {
+        transform: scale(0.9) translateX(0);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateX(0);
+      }
+    }
+    
+    @keyframes glow {
+      from {
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15), 0 0 0 rgba(23, 162, 184, 0.4);
+      }
+      to {
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15), 0 0 20px rgba(23, 162, 184, 0.6);
+      }
+    }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background: var(--container-bg);
+            padding: 20px;
+            border-radius: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #17a2b8;
+            font-size: 1.8em;
+        }
+        .back-button {
+            position: relative;
+            display: inline-block;
+            background: #17a2b8;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: bold;
+            transition: background 0.3s ease;
+            margin-bottom: 20px;
+        }
+        .back-button:hover {
+            background: #138496;
+        }
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s ease, box-shadow 0.3s;
+            font-size: 0.9em;
+        }
+        button:hover {
+            background: #138496;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .simulation-area {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .visualization {
+            padding: 15px;
+            background: var(--container-bg);
+            border-radius: 30px;
+            box-shadow: var(--card-shadow);
+            transition: background-color 0.3s ease;
+        }
+        .stats {
+            padding: 15px;
+            background: var(--container-bg);
+            border-radius: 30px;
+            box-shadow: var(--card-shadow);
+            transition: background-color 0.3s ease;
+        }
+        .participant {
+            padding: 12px;
+            margin: 8px 0;
+            background: var(--card-bg);
+            border-radius: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+        .participant.active {
+            background: #17a2b8;
+            color: white;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+        .metric-card {
+            padding: 12px;
+            background: var(--container-bg);
+            border-radius: 30px;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+        .metric-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #17a2b8;
+        }
+        .metric-label {
+            color: var(--text-secondary);
+            margin-top: 4px;
+            font-size: 0.85em;
+        }
+        .chart-container {
+            margin-top: 15px;
+            height: 180px;
+        }
+        .step-by-step {
+            margin-top: 15px;
+            padding: 12px;
+            background: var(--container-bg);
+            border-radius: 30px;
+            box-shadow: var(--card-shadow);
+            transition: background-color 0.3s ease;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .step {
+            padding: 8px;
+            margin: 4px 0;
+            border-left: 3px solid #17a2b8;
+            background: var(--card-bg);
+            transition: background-color 0.3s ease;
+            font-size: 0.85em;
+        }
+        .navigation-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .nav-button {
+            background: #17a2b8;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: bold;
+            transition: background 0.3s ease;
+        }
+        .nav-button:hover {
+            background: #138496;
+        }
+
+        /* Mobile Dropdown Navigation */
+        .mobile-navbar {
+            display: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-radius: 0 0 20px 20px;
+        }
+
+        .mobile-nav-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mobile-nav-brand {
+            color: white;
+            font-size: 1.4em;
+            font-weight: 800;
+            text-decoration: none;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-size: 1.3em;
+            cursor: pointer;
+            padding: 12px 15px;
+            border-radius: 50px;
+            z-index: 1001;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            width: 45px;
+            height: 45px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-menu-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+
+        /* Mobile Overlay */
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1002;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .mobile-overlay.show {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Mobile Sidebar */
+        .mobile-sidebar {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 280px;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 1003;
+            transition: left 0.3s ease;
+            overflow-y: auto;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+            border-radius: 0 50px 50px 0;
+        }
+
+        .mobile-sidebar.open {
+            left: 0;
+        }
+
+        .mobile-sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .mobile-sidebar-brand {
+            color: white;
+            font-size: 1.4em;
+            font-weight: 800;
+            text-decoration: none;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .mobile-close-btn {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-close-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+            transform: scale(1.05);
+        }
+
+        .mobile-nav-links {
+            padding: 20px 0;
+        }
+
+        .mobile-nav-link {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 15px 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+            margin: 2px 0;
+        }
+
+        .mobile-nav-link:hover,
+        .mobile-nav-link.active {
+            background: rgba(255,255,255,0.2);
+            border-left-color: white;
+            transform: translateX(5px);
+        }
+
+        .mobile-theme-toggle {
+            margin: 20px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            display: block;
+            width: calc(100% - 40px);
+        }
+
+        .mobile-theme-toggle:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+            transform: scale(1.02);
+        }
+
+        /* Mobile Responsive Design */
+        @media screen and (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: flex !important;
+            }
+
+            .navbar {
+                display: none;
+            }
+            
+            .container {
+                margin: 10px;
+                padding: 15px;
+                margin-top: 80px;
+            }
+            
+            h1 {
+                font-size: 1.5em;
+            }
+            
+            .simulation-area {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .controls {
+                gap: 6px;
+                justify-content: center;
+            }
+            
+            .participant {
+                padding: 8px;
+                font-size: 0.85em;
+            }
+            
+            .metrics {
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+                gap: 8px;
+            }
+            
+            .metric-card {
+                padding: 8px;
+            }
+            
+            .metric-value {
+                font-size: 16px;
+            }
+            
+            .chart-container {
+                height: 150px;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .container {
+                margin: 5px;
+                padding: 10px;
+                margin-top: 80px;
+            }
+            
+            h1 {
+                font-size: 1.3em;
+                margin-bottom: 10px;
+            }
+            
+            .controls {
+                gap: 4px;
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            button {
+                padding: 6px 12px;
+                font-size: 0.85em;
+                margin: 2px;
+            }
+            
+            .visualization {
+                padding: 10px;
+            }
+            
+            .stats {
+                padding: 10px;
+            }
+            
+            .participant {
+                padding: 6px;
+                font-size: 0.8em;
+                min-height: auto;
+            }
+            
+            .metrics {
+                grid-template-columns: 1fr;
+                gap: 6px;
+            }
+            
+            .metric-card {
+                padding: 6px;
+            }
+            
+            .metric-value {
+                font-size: 14px;
+            }
+            
+            .metric-label {
+                font-size: 0.8em;
+            }
+            
+            .chart-container {
+                height: 120px;
+            }
+            
+            .step-by-step {
+                max-height: 150px;
+                padding: 8px;
+            }
+            
+            .step {
+                padding: 6px;
+                font-size: 0.8em;
+            }
+
+            .mobile-sidebar {
+                width: 100%;
+                left: -100%;
+            }
+
+            .mobile-menu-toggle {
+                top: 15px;
+                left: 15px;
+                width: 45px;
+                height: 45px;
+                font-size: 1.3em;
+                border-radius: 35px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+    
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" onclick="closeMobileMenu()"></div>
+    
+    <!-- Mobile Sidebar -->
+    <div class="mobile-sidebar" id="mobileSidebar">
+      <div class="mobile-sidebar-header">
+        <a href="index.html" class="mobile-sidebar-brand">OS Visualizer</a>
+        <button class="mobile-close-btn" onclick="closeMobileMenu()">×</button>
+        </div>
+      <div class="mobile-nav-links">
+            <a href="producer_consumer.html" class="mobile-nav-link">Producer-Consumer</a>
+            <a href="dining_philosophers.html" class="mobile-nav-link">Dining Philosophers</a>
+            <a href="readers_writers.html" class="mobile-nav-link active">Readers-Writers</a>
+            <a href="bankers_algorithm.html" class="mobile-nav-link">Banker's Algorithm</a>
+            <a href="memory_management.html" class="mobile-nav-link">Memory Management</a>
+            <a href="resource_allocation.html" class="mobile-nav-link">Resource Allocation</a>
+            <a href="Try _OS.html" class="mobile-nav-link">CPU Scheduling</a>
+      </div>
+      <button class="mobile-theme-toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+    </div>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-brand">OS Visualizer</a>
+            <div class="nav-links">
+                <a href="producer_consumer.html" class="nav-link">Producer-Consumer</a>
+                <a href="dining_philosophers.html" class="nav-link">Dining Philosophers</a>
+                <a href="readers_writers.html" class="nav-link active">Readers-Writers</a>
+                <a href="bankers_algorithm.html" class="nav-link">Banker's Algorithm</a>
+                <a href="memory_management.html" class="nav-link">Memory Management</a>
+                <a href="resource_allocation.html" class="nav-link">Resource Allocation</a>
+                <a href="Try _OS.html" class="nav-link">CPU Scheduling</a>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Readers-Writers Problem</h1>
+        <div class="controls">
+            <button onclick="addReader()">Add Reader</button>
+            <button onclick="addWriter()">Add Writer</button>
+            <button onclick="startReadersWriters()">Start Simulation</button>
+            <button onclick="stopSimulation()">Stop Simulation</button>
+            <button onclick="resetSimulation()">Reset</button>
+        </div>
+
+        <div class="simulation-area">
+            <div class="visualization">
+                <div class="readers-writers">
+                    <div class="readers">
+                        <h3>Readers</h3>
+                        <div id="readers"></div>
+                    </div>
+                    <div class="writers">
+                        <h3>Writers</h3>
+                        <div id="writers"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="stats">
+                <h3>Statistics</h3>
+                <div class="metrics">
+                    <div class="metric-card">
+                        <div class="metric-value" id="activeReaders">0</div>
+                        <div class="metric-label">Active Readers</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="waitingWriters">0</div>
+                        <div class="metric-label">Waiting Writers</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="starvationRisk">Low</div>
+                        <div class="metric-label">Starvation Risk</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="readersWritersChart"></canvas>
+                </div>
+                <div class="step-by-step" id="readersWritersSteps"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===================================================================
+        // READERS-WRITERS PROBLEM IMPLEMENTATION USING MONITORS
+        // ===================================================================
+
+        /**
+         * Monitor Class - Implements monitor synchronization pattern
+         * Provides mutual exclusion and condition variable support for thread coordination
+         */
+        class Monitor {
+            constructor() {
+                this.mutex = Promise.resolve(); // Simulates mutex lock for monitor entry
+                this.conditions = new Map(); // Storage for condition variables
+            }
+
+            /**
+             * Acquire monitor lock (enter critical section)
+             * Only one thread can be inside the monitor at a time
+             */
+            async acquire() {
+                const currentMutex = this.mutex;
+                let releaseMutex;
+                this.mutex = new Promise(resolve => {
+                    releaseMutex = resolve;
+                });
+                await currentMutex;
+                return releaseMutex;
+            }
+
+            /**
+             * Create a condition variable for thread coordination
+             * @param {string} name - Name of the condition variable
+             */
+            createCondition(name) {
+                this.conditions.set(name, {
+                    waiters: [], // Queue of waiting threads
+                    name: name
+                });
+                return name;
+            }
+
+            /**
+             * Wait on a condition variable (releases monitor and waits)
+             * Thread releases monitor lock and waits to be notified
+             * @param {string} conditionName - Name of condition to wait on
+             * @param {Function} releaseMutex - Function to release monitor lock
+             */
+            async wait(conditionName, releaseMutex) {
+                const condition = this.conditions.get(conditionName);
+                if (!condition) throw new Error(`Condition ${conditionName} not found`);
+
+                return new Promise(resolve => {
+                    condition.waiters.push(resolve);
+                    releaseMutex(); // Release monitor before waiting
+                });
+            }
+
+            /**
+             * Signal a condition variable (notify one waiting thread)
+             * Wakes up one thread waiting on the specified condition
+             * @param {string} conditionName - Name of condition to signal
+             */
+            notify(conditionName) {
+                const condition = this.conditions.get(conditionName);
+                if (!condition) throw new Error(`Condition ${conditionName} not found`);
+
+                if (condition.waiters.length > 0) {
+                    const waiter = condition.waiters.shift();
+                    // Schedule the waiter to run after current thread releases monitor
+                    setTimeout(() => waiter(), 0);
+                }
+            }
+
+            /**
+             * Signal all waiting threads on a condition variable
+             * Wakes up all threads waiting on the specified condition
+             * @param {string} conditionName - Name of condition to broadcast
+             */
+            notifyAll(conditionName) {
+                const condition = this.conditions.get(conditionName);
+                if (!condition) throw new Error(`Condition ${conditionName} not found`);
+
+                const waiters = [...condition.waiters];
+                condition.waiters = [];
+                waiters.forEach(waiter => {
+                    setTimeout(() => waiter(), 0);
+                });
+            }
+
+            /**
+             * Get number of threads waiting on a condition
+             * @param {string} conditionName - Name of condition
+             */
+            getWaitingCount(conditionName) {
+                const condition = this.conditions.get(conditionName);
+                return condition ? condition.waiters.length : 0;
+            }
+        }
+
+        /**
+         * Shared Resource Class - Simulates a database or file system
+         * Manages concurrent access by multiple readers and writers using monitors
+         */
+        class SharedResource {
+            constructor() {
+                this.monitor = new Monitor();
+                
+                // Resource state
+                this.activeReaders = 0;      // Number of readers currently accessing resource
+                this.isWriterActive = false; // Whether a writer is currently active
+                this.waitingWriters = 0;     // Number of writers waiting for access
+                
+                // Create condition variables for synchronization
+                this.okToRead = this.monitor.createCondition('okToRead');     // Readers wait here
+                this.okToWrite = this.monitor.createCondition('okToWrite');   // Writers wait here
+                
+                // Shared data simulation
+                this.data = {
+                    content: "Initial shared data",
+                    version: 1,
+                    lastModified: new Date(),
+                    accessHistory: []
+                };
+                
+                // Statistics
+                this.totalReads = 0;
+                this.totalWrites = 0;
+                this.operationLog = [];
+                
+                // Writer starvation prevention
+                this.readerStarvationPrevention = false; // Flag to prevent reader starvation of writers
+            }
+
+            /**
+             * Reader enters the system - Request read access to shared resource
+             * Multiple readers can access simultaneously if no writer is active
+             * @param {number} readerId - Unique identifier for the reader
+             */
+            async startRead(readerId) {
+                const release = await this.monitor.acquire();
+                
+                try {
+                    // Wait if writer is active or writers are waiting (prevent writer starvation)
+                    while (this.isWriterActive || (this.waitingWriters > 0 && this.readerStarvationPrevention)) {
+                        this.logOperation(`Reader ${readerId} waiting - ${this.isWriterActive ? 'writer active' : 'writers waiting'}`);
+                        await this.updateVisualization();
+                        
+                        // Release monitor and wait for okToRead condition
+                        await this.monitor.wait(this.okToRead, release);
+                        // Re-acquire monitor after being notified
+                        const reacquireRelease = await this.monitor.acquire();
+                        release = reacquireRelease;
+                    }
+
+                    // Critical Section: Start reading
+                    this.activeReaders++;
+                    this.totalReads++;
+                    
+                    // Record access in history
+                    this.data.accessHistory.push({
+                        type: 'READ_START',
+                        readerId: readerId,
+                        timestamp: new Date(),
+                        activeReaders: this.activeReaders
+                    });
+                    
+                    this.logOperation(`Reader ${readerId} started reading (Active readers: ${this.activeReaders})`);
+                    await this.updateVisualization();
+                    
+                } finally {
+                    release(); // Always release monitor
+                }
+            }
+
+            /**
+             * Reader finishes reading - Release read access
+             * Last reader may notify waiting writers
+             * @param {number} readerId - Unique identifier for the reader
+             */
+            async finishRead(readerId) {
+                const release = await this.monitor.acquire();
+                
+                try {
+                    // Critical Section: Finish reading
+                    this.activeReaders--;
+                    
+                    // Record access completion
+                    this.data.accessHistory.push({
+                        type: 'READ_FINISH',
+                        readerId: readerId,
+                        timestamp: new Date(),
+                        activeReaders: this.activeReaders
+                    });
+                    
+                    this.logOperation(`Reader ${readerId} finished reading (Active readers: ${this.activeReaders})`);
+                    
+                    // If this was the last reader, notify waiting writers
+                    if (this.activeReaders === 0) {
+                        this.readerStarvationPrevention = false; // Reset starvation prevention
+                        this.monitor.notifyAll(this.okToWrite);
+                        this.logOperation(`Last reader finished - notifying waiting writers`);
+                    }
+                    
+                    await this.updateVisualization();
+                    
+                } finally {
+                    release(); // Always release monitor
+                }
+            }
+
+            /**
+             * Writer enters the system - Request exclusive write access
+             * Writer must wait if any readers or another writer is active
+             * @param {number} writerId - Unique identifier for the writer
+             */
+            async startWrite(writerId) {
+                const release = await this.monitor.acquire();
+                
+                try {
+                    this.waitingWriters++;
+                    this.readerStarvationPrevention = true; // Prevent new readers when writers are waiting
+                    
+                    // Wait while any readers are active or another writer is active
+                    while (this.activeReaders > 0 || this.isWriterActive) {
+                        this.logOperation(`Writer ${writerId} waiting - ${this.activeReaders > 0 ? `${this.activeReaders} readers active` : 'another writer active'}`);
+                        await this.updateVisualization();
+                        
+                        // Release monitor and wait for okToWrite condition
+                        await this.monitor.wait(this.okToWrite, release);
+                        // Re-acquire monitor after being notified
+                        const reacquireRelease = await this.monitor.acquire();
+                        release = reacquireRelease;
+                    }
+
+                    // Critical Section: Start writing (exclusive access)
+                    this.isWriterActive = true;
+                    this.waitingWriters--;
+                    this.totalWrites++;
+                    
+                    // Record write access
+                    this.data.accessHistory.push({
+                        type: 'WRITE_START',
+                        writerId: writerId,
+                        timestamp: new Date()
+                    });
+                    
+                    this.logOperation(`Writer ${writerId} started writing (Exclusive access)`);
+                    await this.updateVisualization();
+                    
+                } finally {
+                    release(); // Always release monitor
+                }
+            }
+
+            /**
+             * Writer finishes writing - Release exclusive write access
+             * Notify both waiting readers and writers
+             * @param {number} writerId - Unique identifier for the writer
+             * @param {string} newContent - New content written to the resource
+             */
+            async finishWrite(writerId, newContent) {
+                const release = await this.monitor.acquire();
+                
+                try {
+                    // Critical Section: Finish writing
+                    this.isWriterActive = false;
+                    
+                    // Update shared data
+                    this.data.content = newContent;
+                    this.data.version++;
+                    this.data.lastModified = new Date();
+                    
+                    // Record write completion
+                    this.data.accessHistory.push({
+                        type: 'WRITE_FINISH',
+                        writerId: writerId,
+                        timestamp: new Date(),
+                        newContent: newContent,
+                        version: this.data.version
+                    });
+                    
+                    this.logOperation(`Writer ${writerId} finished writing - Data updated (v${this.data.version})`);
+                    
+                    // Notify waiting threads
+                    // Priority can be given to readers or writers based on policy
+                    if (this.waitingWriters > 0) {
+                        // Writer-priority: notify writers first to prevent writer starvation
+                        this.monitor.notify(this.okToWrite);
+                        this.logOperation(`Notifying next waiting writer`);
+                    } else {
+                        // No waiting writers, allow readers
+                        this.readerStarvationPrevention = false;
+                        this.monitor.notifyAll(this.okToRead);
+                        this.logOperation(`Notifying waiting readers`);
+                    }
+                    
+                    await this.updateVisualization();
+                    
+                } finally {
+                    release(); // Always release monitor
+                }
+            }
+
+            /**
+             * Get current state of the shared resource
+             */
+            getState() {
+                return {
+                    activeReaders: this.activeReaders,
+                    isWriterActive: this.isWriterActive,
+                    waitingWriters: this.waitingWriters,
+                    totalReads: this.totalReads,
+                    totalWrites: this.totalWrites,
+                    data: { ...this.data },
+                    starvationRisk: this.waitingWriters > 2 ? 'High' : this.waitingWriters > 0 ? 'Medium' : 'Low'
+                };
+            }
+
+            /**
+             * Log operation with timestamp for debugging and visualization
+             */
+            logOperation(message) {
+                const timestamp = new Date().toLocaleTimeString();
+                this.operationLog.push({
+                    timestamp,
+                    message
+                });
+                
+                // Keep only last 20 operations
+                if (this.operationLog.length > 20) {
+                    this.operationLog.shift();
+                }
+                
+                this.updateStepByStepLog();
+            }
+
+            /**
+             * Update step-by-step log display
+             */
+            updateStepByStepLog() {
+                const container = document.getElementById('readersWritersSteps');
+                if (container) {
+                    container.innerHTML = this.operationLog
+                        .slice(-10) // Show last 10 operations
+                        .reverse()
+                        .map(log => `<div class="step">${log.timestamp} - ${log.message}</div>`)
+                        .join('');
+                }
+            }
+
+            /**
+             * Update visual representation
+             */
+            async updateVisualization() {
+                await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for visualization
+                updateDisplay();
+            }
+        }
+
+        /**
+         * Reader Thread Simulation
+         * Simulates a thread that reads from the shared resource
+         */
+        class Reader {
+            constructor(id, sharedResource, readDuration = 2000) {
+                this.id = id;
+                this.sharedResource = sharedResource;
+                this.readDuration = readDuration;
+                this.isRunning = false;
+                this.status = 'Waiting';
+            }
+
+            /**
+             * Start reader thread execution
+             */
+            async start() {
+                this.isRunning = true;
+                this.status = 'Running';
+                updateReaderStatus(this.id, 'Running');
+                
+                while (this.isRunning) {
+                    try {
+                        // Request read access
+                        this.status = 'Requesting Access';
+                        updateReaderStatus(this.id, 'Requesting Access');
+                        
+                        await this.sharedResource.startRead(this.id);
+                        
+                        // Simulate reading operation
+                        this.status = 'Reading';
+                        updateReaderStatus(this.id, 'Reading');
+                        
+                        await this.simulateReading();
+                        
+                        // Finish reading
+                        await this.sharedResource.finishRead(this.id);
+                        
+                        this.status = 'Waiting';
+                        updateReaderStatus(this.id, 'Waiting');
+                        
+                        // Wait before next read attempt
+                        await this.sleep(2000 + Math.random() * 3000);
+                        
+                    } catch (error) {
+                        console.error(`Reader ${this.id} error:`, error);
+                        break;
+                    }
+                }
+                
+                this.status = 'Stopped';
+                updateReaderStatus(this.id, 'Stopped');
+            }
+
+            /**
+             * Stop reader thread
+             */
+            stop() {
+                this.isRunning = false;
+            }
+
+            /**
+             * Simulate reading operation
+             */
+            async simulateReading() {
+                const state = this.sharedResource.getState();
+                // Simulate time spent reading the data
+                await this.sleep(this.readDuration + Math.random() * 1000);
+                
+                // Log what was read (for educational purposes)
+                console.log(`Reader ${this.id} read: "${state.data.content}" (Version: ${state.data.version})`);
+            }
+
+            /**
+             * Sleep utility function
+             */
+            sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        }
+
+        /**
+         * Writer Thread Simulation
+         * Simulates a thread that writes to the shared resource
+         */
+        class Writer {
+            constructor(id, sharedResource, writeDuration = 3000) {
+                this.id = id;
+                this.sharedResource = sharedResource;
+                this.writeDuration = writeDuration;
+                this.isRunning = false;
+                this.status = 'Waiting';
+                this.writeCounter = 0;
+            }
+
+            /**
+             * Start writer thread execution
+             */
+            async start() {
+                this.isRunning = true;
+                this.status = 'Running';
+                updateWriterStatus(this.id, 'Running');
+                
+                while (this.isRunning) {
+                    try {
+                        // Request write access
+                        this.status = 'Requesting Access';
+                        updateWriterStatus(this.id, 'Requesting Access');
+                        
+                        await this.sharedResource.startWrite(this.id);
+                        
+                        // Simulate writing operation
+                        this.status = 'Writing';
+                        updateWriterStatus(this.id, 'Writing');
+                        
+                        const newContent = await this.simulateWriting();
+                        
+                        // Finish writing
+                        await this.sharedResource.finishWrite(this.id, newContent);
+                        
+                        this.status = 'Waiting';
+                        updateWriterStatus(this.id, 'Waiting');
+                        
+                        // Wait before next write attempt
+                        await this.sleep(4000 + Math.random() * 4000);
+                        
+                    } catch (error) {
+                        console.error(`Writer ${this.id} error:`, error);
+                        break;
+                    }
+                }
+                
+                this.status = 'Stopped';
+                updateWriterStatus(this.id, 'Stopped');
+            }
+
+            /**
+             * Stop writer thread
+             */
+            stop() {
+                this.isRunning = false;
+            }
+
+            /**
+             * Simulate writing operation
+             */
+            async simulateWriting() {
+                const newContent = `Data written by Writer ${this.id} at ${new Date().toLocaleTimeString()} (Write #${++this.writeCounter})`;
+                
+                // Simulate time spent writing
+                await this.sleep(this.writeDuration + Math.random() * 1000);
+                
+                console.log(`Writer ${this.id} wrote: "${newContent}"`);
+                return newContent;
+            }
+
+            /**
+             * Sleep utility function
+             */
+            sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        }
+
+        // ===================================================================
+        // GLOBAL SIMULATION STATE
+        // ===================================================================
+
+        let sharedResource = null;
+        let readers = [];
+        let writers = [];
+        let simulationRunning = false;
+        let chart;
+
+        /**
+         * Initialize the readers-writers simulation
+         */
+        function initializeSimulation() {
+            sharedResource = new SharedResource();
+            
+            // Clear existing threads
+            readers.forEach(r => r.stop());
+            writers.forEach(w => w.stop());
+            readers = [];
+            writers = [];
+            
+            updateDisplay();
+            initializeChart();
+        }
+
+        /**
+         * Add a new reader thread
+         */
+        function addReader() {
+            if (!sharedResource) initializeSimulation();
+            
+            const readerId = readers.length + 1;
+            const reader = new Reader(readerId, sharedResource);
+            readers.push(reader);
+            updateReadersDisplay();
+        }
+
+        /**
+         * Add a new writer thread
+         */
+        function addWriter() {
+            if (!sharedResource) initializeSimulation();
+            
+            const writerId = writers.length + 1;
+            const writer = new Writer(writerId, sharedResource);
+            writers.push(writer);
+            updateWritersDisplay();
+        }
+
+        /**
+         * Start the readers-writers simulation
+         */
+        function startReadersWriters() {
+            if (!sharedResource) initializeSimulation();
+            if (simulationRunning) return;
+            
+            simulationRunning = true;
+            
+            // Start all reader threads
+            readers.forEach(reader => {
+                if (!reader.isRunning) {
+                    reader.start().catch(console.error);
+                }
+            });
+            
+            // Start all writer threads
+            writers.forEach(writer => {
+                if (!writer.isRunning) {
+                    writer.start().catch(console.error);
+                }
+            });
+            
+            sharedResource.logOperation('Readers-Writers simulation started');
+        }
+
+        /**
+         * Stop the simulation
+         */
+        function stopSimulation() {
+            simulationRunning = false;
+            
+            readers.forEach(r => r.stop());
+            writers.forEach(w => w.stop());
+            
+            if (sharedResource) {
+                sharedResource.logOperation('Simulation stopped');
+            }
+        }
+
+        /**
+         * Reset the simulation
+         */
+        function resetSimulation() {
+            stopSimulation();
+            
+            setTimeout(() => {
+            readers = [];
+            writers = [];
+                sharedResource = null;
+                updateReadersDisplay();
+                updateWritersDisplay();
+                updateDisplay();
+                initializeChart();
+                
+                // Clear log
+                const stepsContainer = document.getElementById('readersWritersSteps');
+                if (stepsContainer) {
+                    stepsContainer.innerHTML = '<div class="step">System reset - Ready to start</div>';
+                }
+            }, 500);
+        }
+
+        // ===================================================================
+        // DISPLAY UPDATE FUNCTIONS
+        // ===================================================================
+
+        /**
+         * Update main display with current state
+         */
+        function updateDisplay() {
+            if (!sharedResource) return;
+            
+            const state = sharedResource.getState();
+            
+            // Update metrics
+            const activeReadersElement = document.getElementById('activeReaders');
+            const waitingWritersElement = document.getElementById('waitingWriters');
+            const starvationRiskElement = document.getElementById('starvationRisk');
+            
+            if (activeReadersElement) activeReadersElement.textContent = state.activeReaders;
+            if (waitingWritersElement) waitingWritersElement.textContent = state.waitingWriters;
+            if (starvationRiskElement) {
+                starvationRiskElement.textContent = state.starvationRisk;
+                starvationRiskElement.style.color = state.starvationRisk === 'High' ? '#e74c3c' : 
+                                                   state.starvationRisk === 'Medium' ? '#f39c12' : '#27ae60';
+            }
+            
+            // Update chart
+            if (chart) {
+                chart.data.datasets[0].data = [state.activeReaders, state.waitingWriters];
+                chart.update('none');
+            }
+        }
+
+        /**
+         * Update readers display
+         */
+        function updateReadersDisplay() {
+            const container = document.getElementById('readers');
+            if (!container) return;
+            
+            container.innerHTML = readers.map(r => `
+                <div class="participant" id="reader-${r.id}">
+                    <span>Reader ${r.id}</span>
+                    <span id="reader-status-${r.id}">${r.status}</span>
+                </div>
+            `).join('');
+        }
+
+        /**
+         * Update writers display
+         */
+        function updateWritersDisplay() {
+            const container = document.getElementById('writers');
+            if (!container) return;
+            
+            container.innerHTML = writers.map(w => `
+                <div class="participant" id="writer-${w.id}">
+                    <span>Writer ${w.id}</span>
+                    <span id="writer-status-${w.id}">${w.status}</span>
+                </div>
+            `).join('');
+        }
+
+        /**
+         * Update individual reader status
+         */
+        function updateReaderStatus(id, status) {
+            const statusElement = document.getElementById(`reader-status-${id}`);
+            const participantElement = document.getElementById(`reader-${id}`);
+            
+            if (statusElement) {
+                statusElement.textContent = status;
+            }
+            
+            if (participantElement) {
+                participantElement.classList.toggle('active', status === 'Reading');
+            }
+        }
+
+        /**
+         * Update individual writer status
+         */
+        function updateWriterStatus(id, status) {
+            const statusElement = document.getElementById(`writer-status-${id}`);
+            const participantElement = document.getElementById(`writer-${id}`);
+            
+            if (statusElement) {
+                statusElement.textContent = status;
+            }
+            
+            if (participantElement) {
+                participantElement.classList.toggle('active', status === 'Writing');
+            }
+        }
+
+        /**
+         * Initialize chart for visualization
+         */
+        function initializeChart() {
+            const ctx = document.getElementById('readersWritersChart');
+            if (!ctx) return;
+            
+            if (chart) {
+                chart.destroy();
+            }
+            
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Active Readers', 'Waiting Writers'],
+                    datasets: [{
+                        data: [0, 0],
+                        backgroundColor: ['#17a2b8', '#dc3545'],
+                        borderColor: ['#138496', '#c82333'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 300
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Reader-Writer Activity',
+                            color: getComputedStyle(document.documentElement)
+                                .getPropertyValue('--text-color') || '#333'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                color: getComputedStyle(document.documentElement)
+                                    .getPropertyValue('--text-color') || '#333'
+                            },
+                            grid: {
+                                color: getComputedStyle(document.documentElement)
+                                    .getPropertyValue('--border-color') || '#ddd'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: getComputedStyle(document.documentElement)
+                                    .getPropertyValue('--text-color') || '#333'
+                            },
+                            grid: {
+                                color: getComputedStyle(document.documentElement)
+                                    .getPropertyValue('--border-color') || '#ddd'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ===================================================================
+        // MOBILE MENU AND THEME FUNCTIONS
+        // ===================================================================
+
+        function toggleTheme() {
+            const body = document.body;
+            const button = document.querySelector('.theme-toggle');
+            const mobileButton = document.querySelector('.mobile-theme-toggle');
+            
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+                if (button) button.innerHTML = '🌙';
+                if (mobileButton) mobileButton.innerHTML = '🌙 Toggle Theme';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                if (button) button.innerHTML = '☀️';
+                if (mobileButton) mobileButton.innerHTML = '☀️ Toggle Theme';
+                localStorage.setItem('theme', 'dark');
+            }
+            
+            // Reinitialize chart with new colors
+            if (chart) {
+                setTimeout(initializeChart, 100);
+            }
+        }
+
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('mobileSidebar');
+            const overlay = document.querySelector('.mobile-overlay');
+            
+            sidebar.classList.add('open');
+            overlay.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('mobileSidebar');
+            const overlay = document.querySelector('.mobile-overlay');
+            
+            sidebar.classList.remove('open');
+            overlay.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        // ===================================================================
+        // INITIALIZATION
+        // ===================================================================
+
+        window.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme');
+            const button = document.querySelector('.theme-toggle');
+            const mobileButton = document.querySelector('.mobile-theme-toggle');
+            
+            if (savedTheme === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+                if (button) button.innerHTML = '☀️';
+                if (mobileButton) mobileButton.innerHTML = '☀️ Toggle Theme';
+            }
+
+            const mobileLinks = document.querySelectorAll('.mobile-nav-link');
+            mobileLinks.forEach(link => {
+                link.addEventListener('click', closeMobileMenu);
+            });
+            
+            // Initialize simulation
+            initializeSimulation();
+        });
+
+        window.onload = function() {
+            initializeChart();
+            updateDisplay();
+        };
+    </script>
+</body>
+</html> 

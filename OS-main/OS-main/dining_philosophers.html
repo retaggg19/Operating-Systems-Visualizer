@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dining Philosophers Problem</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #f5f5f7;
+            --container-bg: white;
+            --text-color: #333;
+            --text-secondary: #666;
+            --card-bg: #f8f9fa;
+            --card-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            --border-color: #ddd;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --container-bg: #2d2d2d;
+            --text-color: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --card-bg: #3a3a3a;
+            --card-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            --border-color: #555;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .navbar {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background-size: 200% 200%;
+      padding: 20px 0;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-radius: 0 0 30px 30px;
+      margin-bottom: 20px;
+      animation: gradientShift 8s ease infinite, slideDown 0.8s ease-out;
+    }
+    
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
+    @keyframes slideDown {
+      from {
+        transform: translateY(-100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0 30px;
+      position: relative;
+      gap: 40px;
+      animation: fadeInUp 1s ease-out 0.3s both;
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .nav-brand {
+      color: white;
+      font-size: 1.8em;
+      font-weight: 800;
+      text-decoration: none;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      letter-spacing: -0.5px;
+      transition: all 0.3s ease;
+      animation: pulse 2s ease-in-out infinite alternate;
+    }
+    .nav-brand:hover {
+      transform: scale(1.05) rotate(2deg);
+      text-shadow: 0 4px 8px rgba(0,0,0,0.4);
+      animation-play-state: paused;
+    }
+    
+    @keyframes pulse {
+      from {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      }
+      to {
+        text-shadow: 0 4px 12px rgba(255,255,255,0.3);
+      }
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 15px;
+      background: rgba(255,255,255,0.1);
+      padding: 10px 15px;
+      border-radius: 30px;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    .nav-links:hover {
+      background: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-3px); }
+    }
+    
+    .nav-link {
+      color: white;
+      text-decoration: none;
+      padding: 12px 20px;
+      border-radius: 30px;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      position: relative;
+      overflow: hidden;
+      animation: slideInFromLeft 0.6s ease-out forwards;
+      opacity: 0;
+    }
+    
+    .nav-link:nth-child(1) { animation-delay: 0.1s; }
+    .nav-link:nth-child(2) { animation-delay: 0.2s; }
+    .nav-link:nth-child(3) { animation-delay: 0.3s; }
+    .nav-link:nth-child(4) { animation-delay: 0.4s; }
+    .nav-link:nth-child(5) { animation-delay: 0.5s; }
+    .nav-link:nth-child(6) { animation-delay: 0.6s; }
+    .nav-link:nth-child(7) { animation-delay: 0.7s; }
+    
+    @keyframes slideInFromLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    .theme-toggle {
+        background: var(--container-bg);
+        border: 3px solid #f39c12;
+        color: #f39c12;
+        padding: 12px 20px;
+        border-radius: 30px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        font-size: 1.1em;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        min-width: 120px;
+        animation: bounceIn 1s ease-out 0.8s both, glow 2s ease-in-out infinite alternate;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .theme-toggle::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(243, 156, 18, 0.3);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        transition: all 0.3s ease;
+    }
+    
+    .theme-toggle:hover {
+        background: #f39c12;
+        color: white;
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 6px 12px rgba(243, 156, 18, 0.4);
+        animation-play-state: paused;
+    }
+    
+    .theme-toggle:hover::after {
+        width: 100%;
+        height: 100%;
+    }
+    
+    @keyframes bounceIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.3) translateX(50px);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.05) translateX(0);
+      }
+      70% {
+        transform: scale(0.9) translateX(0);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateX(0);
+      }
+    }
+    
+    @keyframes glow {
+      from {
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15), 0 0 0 rgba(243, 156, 18, 0.4);
+      }
+      to {
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15), 0 0 20px rgba(243, 156, 18, 0.6);
+      }
+    }
+    
+    .nav-link::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    .nav-link:hover::before {
+      left: 100%;
+    }
+    .nav-link:hover {
+      background: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .nav-link.active {
+      background: rgba(255,255,255,0.3);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background: var(--container-bg);
+            padding: 20px;
+            border-radius: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #f39c12;
+            font-size: 1.8em;
+        }
+        .back-button {
+            position: relative;
+            display: inline-block;
+            background: #f39c12;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: bold;
+            transition: background 0.3s ease;
+            margin-bottom: 20px;
+        }
+        .back-button:hover {
+            background: #e67e22;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--card-bg);
+            padding: 8px 12px;
+            border-radius: 30px;
+            box-shadow: var(--card-shadow);
+            transition: background-color 0.3s ease;
+        }
+        .input-group label {
+            font-weight: bold;
+            color: var(--text-color);
+            font-size: 0.9em;
+        }
+        .input-group input {
+            background: var(--container-bg);
+            border: 2px solid #f39c12;
+            color: var(--text-color);
+            padding: 6px 10px;
+            border-radius: 20px;
+            width: 80px;
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #e67e22;
+            box-shadow: 0 0 8px rgba(243, 156, 18, 0.3);
+        }
+        button {
+            background: #f39c12;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s ease, box-shadow 0.3s;
+            font-size: 0.9em;
+        }
+        button:hover {
+            background: #e67e22;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .simulation-area {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .visualization {
+            padding: 20px;
+            background: var(--container-bg);
+            border-radius: 30px;
+            box-shadow: var(--card-shadow);
+            transition: background-color 0.3s ease;
+        }
+        .stats {
+            padding: 20px;
+            background: var(--container-bg);
+            border-radius: 30px;
+            box-shadow: var(--card-shadow);
+            transition: background-color 0.3s ease;
+        }
+        .philosophers-table {
+            display: grid;
+            gap: 15px;
+            margin: 15px 0;
+            justify-content: center;
+        }
+        .philosopher {
+            text-align: center;
+            padding: 15px 10px;
+            background: var(--container-bg);
+            border-radius: 30px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .philosopher.eating {
+            background: #f39c12;
+            color: white;
+            transform: scale(1.05);
+        }
+        .philosopher.thinking {
+            background: var(--card-bg);
+        }
+        .philosopher h3 {
+            margin: 5px 0;
+            font-size: 1em;
+        }
+        .philosopher p {
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+        .fork-info {
+            font-size: 0.8em !important;
+            color: var(--text-secondary) !important;
+            margin: 2px 0 !important;
+        }
+        .chopstick {
+            width: 2px;
+            height: 15px;
+            background: #f39c12;
+            margin: 3px auto;
+            transition: all 0.3s ease;
+        }
+        .chopstick.in-use {
+            background: #e67e22;
+        }
+        .chart-container {
+            margin-top: 15px;
+            height: 180px;
+        }
+        .step-by-step {
+            margin-top: 15px;
+            padding: 12px;
+            background: var(--container-bg);
+            border-radius: 30px;
+            box-shadow: var(--card-shadow);
+            transition: background-color 0.3s ease;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .step {
+            padding: 8px;
+            margin: 3px 0;
+            border-left: 3px solid #f39c12;
+            background: var(--card-bg);
+            transition: background-color 0.3s ease;
+            font-size: 0.9em;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+        .metric-card {
+            padding: 12px;
+            background: var(--container-bg);
+            border-radius: 30px;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+            transition: background-color 0.3s ease;
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .metric-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #f39c12;
+            margin: 2px 0;
+        }
+        .metric-label {
+            color: var(--text-secondary);
+            margin: 2px 0;
+            font-size: 0.85em;
+        }
+
+        /* Mobile Menu Toggle Button */
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 12px 15px;
+            border-radius: 50px;
+            z-index: 1001;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            width: 50px;
+            height: 50px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-menu-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+
+        /* Mobile Overlay */
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1002;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .mobile-overlay.show {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Mobile Sidebar */
+        .mobile-sidebar {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 280px;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 1003;
+            transition: left 0.3s ease;
+            overflow-y: auto;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+            border-radius: 0 50px 50px 0;
+        }
+
+        .mobile-sidebar.open {
+            left: 0;
+        }
+
+        .mobile-sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .mobile-sidebar-brand {
+            color: white;
+            font-size: 1.4em;
+            font-weight: 800;
+            text-decoration: none;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .mobile-close-btn {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-close-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+            transform: scale(1.05);
+        }
+
+        .mobile-nav-links {
+            padding: 20px 0;
+        }
+
+        .mobile-nav-link {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 15px 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+            margin: 2px 0;
+        }
+
+        .mobile-nav-link:hover,
+        .mobile-nav-link.active {
+            background: rgba(255,255,255,0.2);
+            border-left-color: white;
+            transform: translateX(5px);
+        }
+
+        .mobile-theme-toggle {
+            margin: 20px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            display: block;
+            width: calc(100% - 40px);
+        }
+
+        .mobile-theme-toggle:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+            transform: scale(1.02);
+        }
+
+        /* Mobile Responsive Design */
+        @media screen and (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: flex !important;
+            }
+
+            .navbar {
+                display: none;
+            }
+            .nav-container {
+                flex-direction: column;
+                gap: 15px;
+                padding: 0 15px;
+            }
+            
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 8px;
+            }
+            
+            .nav-link {
+                padding: 8px 12px;
+                font-size: 0.9em;
+            }
+            
+            .container {
+                margin: 10px;
+                padding: 15px;
+                margin-top: 80px;
+            }
+            
+            h1 {
+                font-size: 1.5em;
+            }
+            
+            .simulation-area {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .philosophers-table {
+                gap: 10px;
+            }
+            
+            .philosopher {
+                padding: 10px 8px;
+                min-height: 100px;
+            }
+            
+            .philosopher h3 {
+                font-size: 0.9em;
+                margin: 3px 0;
+            }
+            
+            .philosopher p {
+                font-size: 0.8em;
+                margin: 3px 0;
+            }
+            
+            .fork-info {
+                font-size: 0.7em !important;
+                margin: 1px 0 !important;
+            }
+            
+            .controls {
+                gap: 6px;
+                justify-content: center;
+            }
+            
+            .input-group {
+                flex-direction: column;
+                gap: 4px;
+                padding: 6px 8px;
+            }
+            
+            .input-group label {
+                font-size: 0.8em;
+            }
+            
+            .input-group input {
+                width: 70px;
+                padding: 4px 6px;
+            }
+            
+            .metrics {
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+                gap: 8px;
+            }
+            
+            .metric-card {
+                padding: 8px;
+                min-height: 50px;
+            }
+            
+            .metric-value {
+                font-size: 16px;
+            }
+            
+            .chart-container {
+                height: 150px;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .navbar {
+                padding: 15px 0;
+            }
+            
+            .nav-container {
+                padding: 0 10px;
+            }
+            
+            .nav-brand {
+                font-size: 1.4em;
+            }
+            
+            .nav-links {
+                gap: 5px;
+            }
+            
+            .nav-link {
+                padding: 6px 8px;
+                font-size: 0.8em;
+            }
+            
+            .theme-toggle {
+                padding: 8px 12px;
+                font-size: 0.9em;
+                min-width: 100px;
+            }
+            
+            .container {
+                margin: 5px;
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 1.3em;
+                margin-bottom: 10px;
+            }
+            
+            .controls {
+                gap: 4px;
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            button {
+                padding: 6px 12px;
+                font-size: 0.85em;
+                margin: 2px;
+            }
+            
+            .philosophers-table {
+                gap: 8px;
+            }
+            
+            .philosopher {
+                padding: 8px 6px;
+                min-height: 80px;
+            }
+            
+            .philosopher h3 {
+                font-size: 0.8em;
+                margin: 2px 0;
+            }
+            
+            .philosopher p {
+                font-size: 0.75em;
+                margin: 2px 0;
+            }
+            
+            .fork-info {
+                font-size: 0.65em !important;
+                margin: 1px 0 !important;
+            }
+            
+            .chopstick {
+                width: 1px;
+                height: 10px;
+                margin: 2px auto;
+            }
+            
+            .visualization {
+                padding: 10px;
+            }
+            
+            .stats {
+                padding: 10px;
+            }
+            
+            .metrics {
+                grid-template-columns: 1fr;
+                gap: 6px;
+            }
+            
+            .metric-card {
+                padding: 6px;
+                min-height: 40px;
+            }
+            
+            .metric-value {
+                font-size: 14px;
+                margin: 1px 0;
+            }
+            
+            .metric-label {
+                font-size: 0.8em;
+                margin: 1px 0;
+            }
+            
+            .chart-container {
+                height: 120px;
+            }
+            
+            .step-by-step {
+                max-height: 150px;
+                padding: 8px;
+            }
+            
+            .step {
+                padding: 6px;
+                margin: 2px 0;
+                font-size: 0.8em;
+            }
+            
+            .mobile-menu-toggle {
+                position: fixed;
+                top: 15px;
+                left: 15px;
+                width: 45px;
+                height: 45px;
+                font-size: 1.3em;
+                border-radius: 35px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+    
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" onclick="closeMobileMenu()"></div>
+    
+    <!-- Mobile Sidebar -->
+    <div class="mobile-sidebar" id="mobileSidebar">
+      <div class="mobile-sidebar-header">
+        <a href="index.html" class="mobile-sidebar-brand">OS Visualizer</a>
+        <button class="mobile-close-btn" onclick="closeMobileMenu()">×</button>
+      </div>
+      <div class="mobile-nav-links">
+        <a href="producer_consumer.html" class="mobile-nav-link">Producer-Consumer</a>
+        <a href="dining_philosophers.html" class="mobile-nav-link active">Dining Philosophers</a>
+        <a href="readers_writers.html" class="mobile-nav-link">Readers-Writers</a>
+        <a href="bankers_algorithm.html" class="mobile-nav-link">Banker's Algorithm</a>
+        <a href="memory_management.html" class="mobile-nav-link">Memory Management</a>
+        <a href="resource_allocation.html" class="mobile-nav-link">Resource Allocation</a>
+        <a href="Try _OS.html" class="mobile-nav-link">CPU Scheduling</a>
+      </div>
+      <button class="mobile-theme-toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+    </div>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-brand">OS Visualizer</a>
+            <div class="nav-links">
+                <a href="producer_consumer.html" class="nav-link">Producer-Consumer</a>
+                <a href="dining_philosophers.html" class="nav-link active">Dining Philosophers</a>
+                <a href="readers_writers.html" class="nav-link">Readers-Writers</a>
+                <a href="bankers_algorithm.html" class="nav-link">Banker's Algorithm</a>
+                <a href="memory_management.html" class="nav-link">Memory Management</a>
+                <a href="resource_allocation.html" class="nav-link">Resource Allocation</a>
+                <a href="Try _OS.html" class="nav-link">CPU Scheduling</a>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Dining Philosophers Problem</h1>
+
+        <div class="controls">
+            <div class="input-group">
+                <label for="numPhilosophers">Number of Philosophers:</label>
+                <input type="number" id="numPhilosophers" min="3" value="5" onchange="updateSimulationParameters()">
+            </div>
+            <div class="input-group">
+                <label for="numForks">Number of Forks:</label>
+                <input type="number" id="numForks" min="2" value="5" onchange="updateSimulationParameters()">
+            </div>
+            <button onclick="startDiningPhilosophers()">Start Simulation</button>
+            <button onclick="stopSimulation()">Stop Simulation</button>
+            <button onclick="resetSimulation()">Reset</button>
+        </div>
+
+        <div class="simulation-area">
+            <div class="visualization">
+                <div class="philosophers-table" id="philosophers"></div>
+            </div>
+            <div class="stats">
+                <h3>Statistics</h3>
+                <div class="metrics">
+                    <div class="metric-card">
+                        <div class="metric-value" id="eatingCount">0</div>
+                        <div class="metric-label">Philosophers Eating</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="thinkingCount">5</div>
+                        <div class="metric-label">Philosophers Thinking</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="forksInUse">0</div>
+                        <div class="metric-label">Forks In Use</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="deadlockRisk">Low</div>
+                        <div class="metric-label">Deadlock Risk</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="philosophersChart"></canvas>
+                </div>
+                <div class="step-by-step" id="philosophersSteps"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class DiningPhilosophers {
+            constructor(numPhilosophers = 5, numForks = 5) {
+                this.numPhilosophers = numPhilosophers;
+                this.numForks = numForks;
+                this.forks = Array(numForks).fill(null).map(() => ({
+                    isTaken: false,
+                    take: async function() {
+                        while (this.isTaken) {
+                            await new Promise(resolve => setTimeout(resolve, 50)); // Wait if fork is taken
+                        }
+                        this.isTaken = true;
+                    },
+                    release: function() {
+                        this.isTaken = false;
+                    }
+                }));
+                this.isRunning = false;
+                this.philosopherStates = Array(numPhilosophers).fill('Thinking');
+                this.philosopherTasks = [];
+            }
+
+            async pickFork(fork) {
+                await fork.take();
+            }
+
+            async eat(philosopherId) {
+                // Fork assignment when number of forks might differ from philosophers
+                const leftFork = philosopherId % this.numForks;
+                const rightFork = (philosopherId + 1) % this.numForks;
+
+                // Always pick the lower-numbered fork first to avoid deadlock
+                const firstFork = Math.min(leftFork, rightFork);
+                const secondFork = Math.max(leftFork, rightFork);
+
+                this.philosopherStates[philosopherId] = 'Hungry';
+                this.updateUI();
+                addStep(`Philosopher ${philosopherId + 1} is trying to pick forks...`);
+                
+                await this.pickFork(this.forks[firstFork]);
+                addStep(`Philosopher ${philosopherId + 1} picked fork ${firstFork + 1}`);
+
+                await this.pickFork(this.forks[secondFork]);
+                addStep(`Philosopher ${philosopherId + 1} picked fork ${secondFork + 1}`);
+
+                this.philosopherStates[philosopherId] = 'Eating';
+                this.updateUI();
+                addStep(`Philosopher ${philosopherId + 1} is eating...`);
+                await new Promise(resolve => setTimeout(resolve, 3000)); // Simulate eating
+
+                this.forks[firstFork].release();
+                this.forks[secondFork].release();
+                this.philosopherStates[philosopherId] = 'Thinking';
+                this.updateUI();
+                addStep(`Philosopher ${philosopherId + 1} released forks ${firstFork + 1} and ${secondFork + 1}`);
+            }
+
+            updateUI() {
+                const table = document.getElementById('philosophers');
+                
+                // Set dynamic grid layout based on number of philosophers and screen size
+                const isMobile = window.innerWidth <= 768;
+                const isSmallMobile = window.innerWidth <= 480;
+                
+                let cols;
+                if (isSmallMobile) {
+                    cols = Math.min(this.numPhilosophers, 2);
+                } else if (isMobile) {
+                    cols = Math.min(this.numPhilosophers, 3);
+                } else {
+                    cols = Math.min(this.numPhilosophers, 5);
+                }
+                
+                table.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+                
+                table.innerHTML = this.philosopherStates.map((state, i) => {
+                    const leftFork = i % this.numForks;
+                    const rightFork = (i + 1) % this.numForks;
+                    const leftChopstick = this.forks[leftFork].isTaken;
+                    const rightChopstick = this.forks[rightFork].isTaken;
+                    
+                    return `
+                        <div class="philosopher ${state.toLowerCase()}">
+                            <div class="chopstick ${leftChopstick ? 'in-use' : ''}" title="Fork ${leftFork + 1}"></div>
+                            <h3>Philosopher ${i + 1}</h3>
+                            <p>${state}</p>
+                            <p class="fork-info">Forks: ${leftFork + 1}, ${rightFork + 1}</p>
+                            <div class="chopstick ${rightChopstick ? 'in-use' : ''}" title="Fork ${rightFork + 1}"></div>
+                        </div>
+                    `;
+                }).join('');
+
+                // Update metrics
+                const eating = this.philosopherStates.filter(s => s === 'Eating').length;
+                const thinking = this.philosopherStates.filter(s => s === 'Thinking').length;
+                const hungry = this.philosopherStates.filter(s => s === 'Hungry').length;
+                const forksInUse = this.forks.filter(f => f.isTaken).length;
+                
+                // Adjust deadlock risk based on resource scarcity
+                let deadlockRisk;
+                if (this.numForks < this.numPhilosophers) {
+                    deadlockRisk = hungry >= 2 ? 'Very High' : (hungry >= 1 ? 'High' : 'Medium');
+                } else {
+                    deadlockRisk = hungry >= 3 ? 'High' : (hungry >= 2 ? 'Medium' : 'Low');
+                }
+
+                document.getElementById('eatingCount').textContent = eating;
+                document.getElementById('thinkingCount').textContent = thinking;
+                document.getElementById('forksInUse').textContent = `${forksInUse}/${this.numForks}`;
+                document.getElementById('deadlockRisk').textContent = deadlockRisk;
+
+                // Update chart if it exists
+                if (chart) {
+                    chart.data.datasets[0].data = [eating, thinking + hungry];
+                    chart.update();
+                }
+            }
+
+            async start() {
+                this.isRunning = true;
+                const philosophers = Array(this.numPhilosophers).fill(null).map((_, i) => i);
+                
+                // Simulate philosophers eating in parallel
+                this.philosopherTasks = philosophers.map(async (id) => {
+                    while (this.isRunning) {
+                        await this.eat(id);
+                        await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1500)); // Random thinking time
+                    }
+                });
+
+                try {
+                    await Promise.all(this.philosopherTasks);
+                } catch (error) {
+                    // Expected when stopping simulation
+                }
+            }
+
+            stop() {
+                this.isRunning = false;
+                // Reset all states
+                this.philosopherStates = Array(this.numPhilosophers).fill('Thinking');
+                this.forks.forEach(fork => fork.release());
+                this.updateUI();
+            }
+
+            reset() {
+                this.stop();
+                this.philosopherStates = Array(this.numPhilosophers).fill('Thinking');
+                this.forks = Array(this.numForks).fill(null).map(() => ({
+                    isTaken: false,
+                    take: async function() {
+                        while (this.isTaken) {
+                            await new Promise(resolve => setTimeout(resolve, 50));
+                        }
+                        this.isTaken = true;
+                    },
+                    release: function() {
+                        this.isTaken = false;
+                    }
+                }));
+                this.updateUI();
+            }
+        }
+
+        let chart;
+        let diningSimulation = new DiningPhilosophers(5, 5);
+
+        function updateSimulationParameters() {
+            const numPhilosophers = parseInt(document.getElementById('numPhilosophers').value);
+            const numForks = parseInt(document.getElementById('numForks').value);
+            
+            if (numPhilosophers >= 3 && numForks >= 2) {
+                diningSimulation.stop();
+                diningSimulation = new DiningPhilosophers(numPhilosophers, numForks);
+                diningSimulation.updateUI();
+                initializeChart();
+                updateResourceInfo();
+            }
+        }
+
+        function updateResourceInfo() {
+            const numPhilosophers = diningSimulation.numPhilosophers;
+            const numForks = diningSimulation.numForks;
+            
+            // Add resource scarcity warning
+            if (numForks < numPhilosophers) {
+                addStep(`⚠️ Resource scarcity: ${numPhilosophers} philosophers with only ${numForks} forks!`);
+            } else if (numForks > numPhilosophers) {
+                addStep(`ℹ️ Abundant resources: ${numForks} forks for ${numPhilosophers} philosophers`);
+            } else {
+                addStep(`✅ Balanced resources: ${numPhilosophers} philosophers with ${numForks} forks`);
+            }
+        }
+
+        function startDiningPhilosophers() {
+            if (diningSimulation.isRunning) {
+                diningSimulation.stop();
+            }
+            diningSimulation.start().catch(console.error);
+        }
+
+        function stopSimulation() {
+            diningSimulation.stop();
+        }
+
+        function resetSimulation() {
+            diningSimulation.reset();
+            initializeChart();
+        }
+
+        function addStep(message) {
+            const container = document.getElementById('philosophersSteps');
+            const step = document.createElement('div');
+            step.className = 'step';
+            step.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            container.insertBefore(step, container.firstChild);
+            if (container.children.length > 10) {
+                container.removeChild(container.lastChild);
+            }
+        }
+
+        function initializeChart() {
+            const ctx = document.getElementById('philosophersChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (chart) {
+                chart.destroy();
+            }
+            
+            chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Eating', 'Thinking'],
+                    datasets: [{
+                        data: [0, 5],
+                        backgroundColor: ['#f39c12', '#95a5a6']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Philosophers State Distribution'
+                        },
+                        legend: {
+                            display: true,
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Mobile menu functionality
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('mobileSidebar');
+            const overlay = document.querySelector('.mobile-overlay');
+            
+            sidebar.classList.add('open');
+            overlay.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('mobileSidebar');
+            const overlay = document.querySelector('.mobile-overlay');
+            
+            sidebar.classList.remove('open');
+            overlay.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        // Theme toggle functionality
+        function toggleTheme() {
+            const body = document.body;
+            const button = document.querySelector('.theme-toggle');
+            const mobileButton = document.querySelector('.mobile-theme-toggle');
+            
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+                if (button) button.innerHTML = '🌙';
+                if (mobileButton) mobileButton.innerHTML = '🌙 Toggle Theme';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                if (button) button.innerHTML = '☀️';
+                if (mobileButton) mobileButton.innerHTML = '☀️ Toggle Theme';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Load saved theme on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme');
+            const button = document.querySelector('.theme-toggle');
+            const mobileButton = document.querySelector('.mobile-theme-toggle');
+            
+            if (savedTheme === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+                if (button) button.innerHTML = '☀️';
+                if (mobileButton) mobileButton.innerHTML = '☀️ Toggle Theme';
+            }
+
+            // Close mobile menu when clicking on mobile nav links
+            const mobileLinks = document.querySelectorAll('.mobile-nav-link');
+            mobileLinks.forEach(link => {
+                link.addEventListener('click', closeMobileMenu);
+            });
+            
+            // Initialize the simulation UI
+            diningSimulation.updateUI();
+            updateResourceInfo();
+        });
+
+        // Initialize
+        window.onload = function() {
+            try {
+                initializeChart();
+                diningSimulation.updateUI();
+                updateResourceInfo();
+            } catch (error) {
+                console.error('Initialization error:', error);
+                // Fallback initialization
+                setTimeout(() => {
+                    initializeChart();
+                    diningSimulation.updateUI();
+                    updateResourceInfo();
+                }, 100);
+            }
+        };
+
+        // Update layout on window resize
+        window.addEventListener('resize', function() {
+            if (diningSimulation) {
+                diningSimulation.updateUI();
+            }
+        });
+    </script>
+</body>
+</html> 

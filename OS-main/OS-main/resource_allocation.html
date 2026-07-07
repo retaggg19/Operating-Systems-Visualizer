@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resource Allocation Graph</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f5f5f7;
+            --container-bg: white;
+            --text-color: #333;
+            --text-secondary: #666;
+            --card-bg: #f8f9fa;
+            --card-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            --border-color: #ddd;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --container-bg: #2d2d2d;
+            --text-color: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --card-bg: #3a3a3a;
+            --card-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            --border-color: #555;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-size: 200% 200%;
+            padding: 20px 0;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-radius: 0 0 30px 30px;
+            margin-bottom: 20px;
+            animation: gradientShift 8s ease infinite, slideDown 0.8s ease-out;
+        }
+
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0 30px;
+            position: relative;
+            gap: 40px;
+            animation: fadeInUp 1s ease-out 0.3s both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .theme-toggle {
+            background: var(--container-bg);
+            border: 3px solid #9b59b6;
+            color: #9b59b6;
+            padding: 12px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 1.1em;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+            min-width: 120px;
+            animation: bounceIn 1s ease-out 0.8s both, glow 2s ease-in-out infinite alternate;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theme-toggle::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(155, 89, 182, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: #9b59b6;
+            color: white;
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 6px 12px rgba(155, 89, 182, 0.4);
+            animation-play-state: paused;
+        }
+
+        .theme-toggle:hover::after {
+            width: 100%;
+            height: 100%;
+        }
+
+        @keyframes bounceIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.3) translateX(50px);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.05) translateX(0);
+            }
+
+            70% {
+                transform: scale(0.9) translateX(0);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1) translateX(0);
+            }
+        }
+
+        @keyframes glow {
+            from {
+                box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15), 0 0 0 rgba(155, 89, 182, 0.4);
+            }
+
+            to {
+                box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15), 0 0 20px rgba(155, 89, 182, 0.6);
+            }
+        }
+
+        .nav-brand {
+            color: white;
+            font-size: 1.8em;
+            font-weight: 800;
+            text-decoration: none;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            letter-spacing: -0.5px;
+            transition: all 0.3s ease;
+            animation: pulse 2s ease-in-out infinite alternate;
+        }
+
+        .nav-brand:hover {
+            transform: scale(1.05) rotate(2deg);
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+            animation-play-state: paused;
+        }
+
+        @keyframes pulse {
+            from {
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            }
+
+            to {
+                text-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
+            }
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 30px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .nav-links:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-3px);
+            }
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+            animation: slideInFromLeft 0.6s ease-out forwards;
+            opacity: 0;
+        }
+
+        .nav-link:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .nav-link:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .nav-link:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .nav-link:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+
+        .nav-link:nth-child(5) {
+            animation-delay: 0.5s;
+        }
+
+        .nav-link:nth-child(6) {
+            animation-delay: 0.6s;
+        }
+
+        .nav-link:nth-child(7) {
+            animation-delay: 0.7s;
+        }
+
+        @keyframes slideInFromLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .nav-link:hover::before {
+            left: 100%;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .nav-link.active {
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Mobile Menu Toggle Button */
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 12px 15px;
+            border-radius: 50px;
+            z-index: 1001;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            width: 50px;
+            height: 50px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-menu-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Mobile Overlay */
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1002;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .mobile-overlay.show {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Mobile Sidebar */
+        .mobile-sidebar {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 280px;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 1003;
+            transition: left 0.3s ease;
+            overflow-y: auto;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+            border-radius: 0 50px 50px 0;
+        }
+
+        .mobile-sidebar.open {
+            left: 0;
+        }
+
+        .mobile-sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .mobile-sidebar-brand {
+            color: white;
+            font-size: 1.4em;
+            font-weight: 800;
+            text-decoration: none;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .mobile-close-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-close-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: scale(1.05);
+        }
+
+        .mobile-nav-links {
+            padding: 20px 0;
+        }
+
+        .mobile-nav-link {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 15px 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+            margin: 2px 0;
+        }
+
+        .mobile-nav-link:hover,
+        .mobile-nav-link.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-left-color: white;
+            transform: translateX(5px);
+        }
+
+        .mobile-theme-toggle {
+            margin: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            display: block;
+            width: calc(100% - 40px);
+        }
+
+        .mobile-theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: scale(1.02);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background: var(--container-bg);
+            padding: 20px;
+            border-radius: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #9b59b6;
+            font-size: 1.8em;
+        }
+
+        .graph-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 15px;
+        }
+
+        #graph {
+            height: 400px;
+            border: 1px solid var(--border-color);
+            border-radius: 30px;
+            background: var(--container-bg);
+            transition: all 0.3s ease;
+        }
+
+        .controls {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 30px;
+            transition: background-color 0.3s ease;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group h3 {
+            margin-top: 0;
+            color: #9b59b6;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px 20px;
+            margin: 5px 0;
+            border: 2px solid var(--border-color);
+            border-radius: 30px;
+            box-sizing: border-box;
+            background: var(--container-bg);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        select {
+            appearance: none;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239b59b6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 16px;
+            padding-right: 45px;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #9b59b6;
+            box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.1), 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+
+        input:hover,
+        select:hover {
+            border-color: #9b59b6;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        button {
+            background: #9b59b6;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+            font-size: 0.9em;
+        }
+
+        button:hover {
+            background: #8e44ad;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 30px;
+            box-shadow: var(--card-shadow);
+            background: var(--container-bg);
+            transition: background-color 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .deadlock {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .safe {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .back-button {
+            display: inline-block;
+            background: #9b59b6;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: bold;
+            transition: background 0.3s, box-shadow 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .back-button:hover {
+            background: #8e44ad;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .nav-button {
+            background: #9b59b6;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: bold;
+            transition: background 0.3s;
+            margin: 0 10px;
+        }
+
+        .nav-button:hover {
+            background: #8e44ad;
+        }
+
+        /* Mobile Responsive Design */
+        @media screen and (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: flex !important;
+            }
+
+            .navbar {
+                display: none;
+            }
+
+            .container {
+                margin: 10px;
+                padding: 15px;
+                margin-top: 80px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .graph-container {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            #graph {
+                height: 300px;
+            }
+
+            .controls {
+                padding: 12px;
+            }
+
+            .control-group {
+                margin-bottom: 12px;
+            }
+
+            .control-group h3 {
+                font-size: 1em;
+                margin-bottom: 8px;
+            }
+
+            input,
+            select {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+
+            button {
+                padding: 6px 12px;
+                font-size: 0.85em;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .container {
+                margin: 5px;
+                padding: 10px;
+                margin-top: 80px;
+            }
+
+            h1 {
+                font-size: 1.3em;
+                margin-bottom: 10px;
+            }
+
+            .graph-container {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            #graph {
+                height: 250px;
+                border-radius: 20px;
+            }
+
+            .controls {
+                padding: 10px;
+            }
+
+            .control-group {
+                margin-bottom: 10px;
+            }
+
+            .control-group h3 {
+                font-size: 0.95em;
+                margin-bottom: 6px;
+            }
+
+            input,
+            select {
+                padding: 6px 10px;
+                font-size: 11px;
+                margin: 3px 0;
+            }
+
+            select {
+                padding-right: 35px;
+                background-size: 14px;
+            }
+
+            button {
+                padding: 5px 10px;
+                font-size: 0.8em;
+                margin: 2px 0;
+            }
+
+            .status {
+                padding: 8px;
+                font-size: 0.85em;
+                margin-top: 10px;
+            }
+
+            .navigation-buttons {
+                margin-bottom: 15px;
+            }
+
+            .nav-button {
+                padding: 6px 12px;
+                font-size: 0.85em;
+                margin: 0 5px;
+            }
+
+            .back-button {
+                padding: 6px 12px;
+                font-size: 0.85em;
+                margin-bottom: 15px;
+            }
+
+            .mobile-sidebar {
+                width: 100%;
+            }
+
+            .mobile-menu-toggle {
+                position: fixed;
+                top: 15px;
+                left: 15px;
+                width: 45px;
+                height: 45px;
+                font-size: 1.3em;
+                border-radius: 35px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" onclick="closeMobileMenu()"></div>
+
+    <!-- Mobile Sidebar -->
+    <div class="mobile-sidebar" id="mobileSidebar">
+        <div class="mobile-sidebar-header">
+            <a href="index.html" class="mobile-sidebar-brand">OS Visualizer</a>
+            <button class="mobile-close-btn" onclick="closeMobileMenu()">×</button>
+        </div>
+        <div class="mobile-nav-links">
+            <a href="producer_consumer.html" class="mobile-nav-link">Producer-Consumer</a>
+            <a href="dining_philosophers.html" class="mobile-nav-link">Dining Philosophers</a>
+            <a href="readers_writers.html" class="mobile-nav-link">Readers-Writers</a>
+            <a href="bankers_algorithm.html" class="mobile-nav-link">Banker's Algorithm</a>
+            <a href="memory_management.html" class="mobile-nav-link">Memory Management</a>
+            <a href="resource_allocation.html" class="mobile-nav-link active">Resource Allocation</a>
+            <a href="Try _OS.html" class="mobile-nav-link">CPU Scheduling</a>
+        </div>
+        <button class="mobile-theme-toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+    </div>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-brand">OS Visualizer</a>
+            <div class="nav-links">
+                <a href="producer_consumer.html" class="nav-link">Producer-Consumer</a>
+                <a href="dining_philosophers.html" class="nav-link">Dining Philosophers</a>
+                <a href="readers_writers.html" class="nav-link">Readers-Writers</a>
+                <a href="bankers_algorithm.html" class="nav-link">Banker's Algorithm</a>
+                <a href="memory_management.html" class="nav-link">Memory Management</a>
+                <a href="resource_allocation.html" class="nav-link active">Resource Allocation</a>
+                <a href="Try _OS.html" class="nav-link">CPU Scheduling</a>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Resource Allocation</h1>
+        <div class="graph-container">
+            <div id="graph"></div>
+            <div class="controls">
+                <div class="control-group">
+                    <h3>Add Process</h3>
+                    <button onclick="addProcess()">+ Process</button>
+                </div>
+                <div class="control-group">
+                    <h3>Add Resource</h3>
+                    <input type="number" id="resInstances" placeholder="Instances" value="1" min="1">
+                    <button onclick="addResource()">+ Resource</button>
+                </div>
+                <div class="control-group">
+                    <h3>Add Edge</h3>
+                    <select id="edgeType">
+                        <option value="request">Request (P → R)</option>
+                        <option value="allocation">Allocation (R → P)</option>
+                    </select>
+                    <select id="fromNode"></select>
+                    <select id="toNode"></select>
+                    <button onclick="addEdge()">+ Edge</button>
+                </div>
+                <div class="control-group">
+                    <h3>Analysis</h3>
+                    <button onclick="detectDeadlock()">Detect Deadlock</button>
+                    <button onclick="checkSafety()">Check Safety</button>
+                </div>
+                <div id="status" class="status"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const nodes = new vis.DataSet();
+        const edges = new vis.DataSet();
+        let network;
+
+        function updateGraph() {
+            network && network.destroy();
+            const container = document.getElementById('graph');
+            network = new vis.Network(container, { nodes, edges }, {
+                nodes: { shape: 'dot', size: 20, font: { size: 14 } },
+                edges: { arrows: { to: { enabled: true } }, font: { size: 12 } },
+                physics: { stabilization: false, barnesHut: { gravitationalConstant: -80000, springConstant: 0.001, springLength: 200 } }
+            });
+            updateSelectors();
+        }
+
+        function updateSelectors() {
+            const from = document.getElementById('fromNode');
+            const to = document.getElementById('toNode');
+            [from, to].forEach(sel => {
+                sel.innerHTML = '';
+                nodes.forEach(n => {
+                    const opt = document.createElement('option');
+                    opt.value = n.id;
+                    opt.text = n.label;
+                    sel.appendChild(opt);
+                });
+            });
+        }
+
+        let procCount = 0, resCount = 0;
+        function addProcess() {
+            procCount++;
+            nodes.add({ id: 'P' + procCount, label: 'P' + procCount, color: '#3498db' });
+            updateGraph();
+        }
+        function addResource() {
+            resCount++;
+            const inst = parseInt(document.getElementById('resInstances').value) || 1;
+            nodes.add({ id: 'R' + resCount, label: `R${resCount}(${inst})`, color: '#e74c3c' });
+            updateGraph();
+        }
+        function addEdge() {
+            const type = document.getElementById('edgeType').value;
+            const from = document.getElementById('fromNode').value;
+            const to = document.getElementById('toNode').value;
+
+            if (from === to) {
+                return alert('From and To must differ');
+            }
+
+            // Prevent P→P and R→R relationships
+            if ((from.startsWith('P') && to.startsWith('P')) || (from.startsWith('R') && to.startsWith('R'))) {
+                return alert('Invalid relationship: Processes can only connect to Resources and vice versa');
+            }
+
+            // Ensure edge type matches node types
+            if (type === 'request' && !from.startsWith('P')) {
+                return alert('Request edges must go from Process to Resource (P → R)');
+            }
+
+            if (type === 'allocation' && !from.startsWith('R')) {
+                return alert('Allocation edges must go from Resource to Process (R → P)');
+            }
+
+            edges.add({ from, to, color: type === 'request' ? '#e67e22' : '#2ecc71' });
+            updateGraph();
+        }
+
+        function detectDeadlock() {
+            // Always use the current, saved edges in the DataSet for deadlock detection
+            // This ensures that all added edges (allocations and requests) are considered
+            const resources = {};
+            const processes = [];
+            nodes.forEach(n => {
+                if (n.id.startsWith('R')) {
+                    const m = n.label.match(/\((\d+)\)/);
+                    resources[n.id] = {
+                        id: n.id,
+                        total: m ? parseInt(m[1]) : 1,
+                        allocated: 0,
+                        holders: [],
+                        requesters: []
+                    };
+                } else if (n.id.startsWith('P')) {
+                    processes.push(n.id);
+                }
+            });
+
+            // Build allocation and request info from the current, saved edges
+            edges.forEach(e => {
+                if (e.from.startsWith('R') && e.to.startsWith('P')) {
+                    if (resources[e.from]) {
+                        resources[e.from].allocated++;
+                        resources[e.from].holders.push(e.to);
+                    }
+                } else if (e.from.startsWith('P') && e.to.startsWith('R')) {
+                    if (resources[e.to]) {
+                        resources[e.to].requesters.push(e.from);
+                    }
+                }
+            });
+
+            // Build wait-for graph: for every process requesting a fully allocated resource,
+            // add a wait-for edge to every process holding that resource
+            const waitForGraph = {};
+            processes.forEach(p => waitForGraph[p] = []);
+            processes.forEach(proc => {
+                Object.values(resources).forEach(resource => {
+                    if (resource.requesters.includes(proc) && resource.allocated >= resource.total) {
+                        resource.holders.forEach(holder => {
+                            if (holder !== proc && !waitForGraph[proc].includes(holder)) {
+                                waitForGraph[proc].push(holder);
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Cycle detection
+            const visited = {};
+            const recStack = {};
+            let deadlockDetected = false;
+            processes.forEach(p => { visited[p] = false; recStack[p] = false; });
+            function detectCycle(node) {
+                visited[node] = true;
+                recStack[node] = true;
+                for (const neighbor of waitForGraph[node] || []) {
+                    if (!visited[neighbor]) {
+                        if (detectCycle(neighbor)) return true;
+                    } else if (recStack[neighbor]) {
+                        return true;
+                    }
+                }
+                recStack[node] = false;
+                return false;
+            }
+            for (const p of processes) {
+                if (!visited[p] && detectCycle(p)) {
+                    deadlockDetected = true;
+                    break;
+                }
+            }
+
+            const st = document.getElementById('status');
+            if (deadlockDetected) {
+                st.innerHTML = '<span class="deadlock">Deadlock Detected</span>';
+            } else {
+                st.textContent = 'No Deadlock';
+                st.className = 'status safe';
+            }
+        }
+
+        function checkSafety() {
+            // Get resources and their instances
+            const resources = {};
+            const processes = [];
+
+            // Get all processes and resources
+            nodes.forEach(n => {
+                if (n.id.startsWith('R')) {
+                    const m = n.label.match(/\((\d+)\)/);
+                    resources[n.id] = {
+                        id: n.id,
+                        total: m ? parseInt(m[1]) : 1,
+                        allocated: 0,
+                        holders: [],
+                        requesters: []
+                    };
+                } else if (n.id.startsWith('P')) {
+                    processes.push(n.id);
+                }
+            });
+
+            // Build allocation and request matrices
+            const allocation = {};
+            const request = {};
+
+            processes.forEach(p => {
+                allocation[p] = {};
+                request[p] = {};
+                Object.keys(resources).forEach(r => {
+                    allocation[p][r] = 0;
+                    request[p][r] = 0;
+                });
+            });
+
+            // Fill allocation and request matrices based on edges
+            edges.forEach(e => {
+                if (e.from.startsWith('R') && e.to.startsWith('P')) {
+                    // Allocation edge (R → P)
+                    allocation[e.to][e.from]++;
+                    resources[e.from].allocated++;
+                    resources[e.from].holders.push(e.to);
+                } else if (e.from.startsWith('P') && e.to.startsWith('R')) {
+                    // Request edge (P → R)
+                    request[e.from][e.to]++;
+                    resources[e.to].requesters.push(e.from);
+                }
+            });
+
+            // Calculate available resources
+            const available = {};
+            Object.keys(resources).forEach(r => {
+                available[r] = resources[r].total - resources[r].allocated;
+            });
+
+            // Check for safety using Banker's Algorithm
+            const work = { ...available };
+            const finish = {};
+            processes.forEach(p => finish[p] = false);
+
+            let safeSequence = [];
+            let progress;
+
+            do {
+                progress = false;
+
+                for (const p of processes) {
+                    if (finish[p]) continue;
+
+                    // Check if process p can finish with available resources
+                    let canFinish = true;
+                    for (const r in work) {
+                        if (request[p][r] > work[r]) {
+                            canFinish = false;
+                            break;
+                        }
+                    }
+
+                    if (canFinish) {
+                        // Process can finish, add its resources back to work
+                        for (const r in work) {
+                            work[r] += allocation[p][r];
+                        }
+                        finish[p] = true;
+                        safeSequence.push(p);
+                        progress = true;
+                    }
+                }
+            } while (progress);
+
+            // Check if all processes can finish
+            const safe = processes.every(p => finish[p]);
+
+            // Check for deadlock using the same approach as detectDeadlock()
+            // Build a wait-for graph between processes
+            const waitForGraph = {};
+            processes.forEach(p => {
+                waitForGraph[p] = [];
+            });
+
+            // For each resource, if it's fully allocated and has requesters,
+            // those requesters must wait for the holders to release the resource
+            Object.values(resources).forEach(resource => {
+                // Check if resource is fully allocated (mutual exclusion)
+                if (resource.allocated >= resource.total && resource.requesters.length > 0) {
+                    // For each process requesting this resource
+                    resource.requesters.forEach(requester => {
+                        // The requester must wait for all current holders
+                        resource.holders.forEach(holder => {
+                            // Don't create self-loops
+                            if (requester !== holder) {
+                                waitForGraph[requester].push(holder);
+                            }
+                        });
+                    });
+                }
+            });
+
+            // Check for cycles in the wait-for graph using DFS
+            const visited = {};
+            const recStack = {};
+            let deadlock = false;
+
+            processes.forEach(p => {
+                visited[p] = false;
+                recStack[p] = false;
+            });
+
+            function detectCycle(node) {
+                visited[node] = true;
+                recStack[node] = true;
+
+                for (const neighbor of waitForGraph[node] || []) {
+                    if (!visited[neighbor]) {
+                        if (detectCycle(neighbor)) {
+                            return true;
+                        }
+                    } else if (recStack[neighbor]) {
+                        return true; // Cycle detected
+                    }
+                }
+
+                recStack[node] = false;
+                return false;
+            }
+
+            // Check each process for cycles
+            for (const p of processes) {
+                if (!visited[p] && detectCycle(p)) {
+                    deadlock = true;
+                    break;
+                }
+            }
+
+            const st = document.getElementById('status');
+
+            if (deadlock) {
+                st.innerHTML = '<span class="deadlock">Deadlock Detected</span>';
+            } else if (!safe) {
+                st.innerHTML = '<span class="deadlock">Unsafe State [No Deadlock]</span>';
+            } else {
+                st.innerHTML = '<span class="safe">Safe State</span>';
+            }
+        }
+
+        // Mobile menu functions
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('mobileSidebar');
+            const overlay = document.querySelector('.mobile-overlay');
+
+            sidebar.classList.add('open');
+            overlay.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('mobileSidebar');
+            const overlay = document.querySelector('.mobile-overlay');
+
+            sidebar.classList.remove('open');
+            overlay.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        // Theme toggle functionality
+        function toggleTheme() {
+            const body = document.body;
+            const button = document.querySelector('.theme-toggle');
+            const mobileButton = document.querySelector('.mobile-theme-toggle');
+
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+                if (button) button.innerHTML = '🌙';
+                if (mobileButton) mobileButton.innerHTML = '🌙 Toggle Theme';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                if (button) button.innerHTML = '☀️';
+                if (mobileButton) mobileButton.innerHTML = '☀️ Toggle Theme';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Load saved theme on page load
+        window.addEventListener('DOMContentLoaded', function () {
+            const savedTheme = localStorage.getItem('theme');
+            const button = document.querySelector('.theme-toggle');
+            const mobileButton = document.querySelector('.mobile-theme-toggle');
+
+            if (savedTheme === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+                if (button) button.innerHTML = '☀️';
+                if (mobileButton) mobileButton.innerHTML = '☀️ Toggle Theme';
+            }
+
+            // Close mobile menu when clicking on a link
+            const mobileLinks = document.querySelectorAll('.mobile-nav-link');
+            mobileLinks.forEach(link => {
+                link.addEventListener('click', closeMobileMenu);
+            });
+        });
+
+        window.onload = () => {
+            updateGraph();
+            // add sample nodes for demo
+            addProcess(); addProcess();
+            document.getElementById('resInstances').value = 1;
+            addResource(); addResource();
+        };
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operating Systems Visualizer</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Interactive Operating Systems Visualizer - Learn CPU scheduling, deadlock avoidance, synchronization problems, and memory management through visual simulations.">
+    <meta name="keywords" content="operating systems, CPU scheduling, deadlock, synchronization, memory management, computer science, education">
+    <meta name="author" content="OS Project">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="Design Studio Logo - 'os' in Blue and Grey.png">
+    <link rel="shortcut icon" type="image/png" href="Design Studio Logo - 'os' in Blue and Grey.png">
+    <link rel="apple-touch-icon" href="Design Studio Logo - 'os' in Blue and Grey.png">
+    
+    <!-- Open Graph Meta Tags for Social Media -->
+    <meta property="og:title" content="Operating Systems Visualizer">
+    <meta property="og:description" content="Interactive Operating Systems Visualizer - Learn CPU scheduling, deadlock avoidance, synchronization problems, and memory management through visual simulations.">
+    <meta property="og:image" content="Design Studio Logo - 'os' in Blue and Grey.png">
+    <meta property="og:image:alt" content="Operating Systems Visualizer Logo">
+    <meta property="og:url" content="https://yourwebsite.com">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="OS Visualizer">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Operating Systems Visualizer">
+    <meta name="twitter:description" content="Interactive Operating Systems Visualizer - Learn CPU scheduling, deadlock avoidance, synchronization problems, and memory management.">
+    <meta name="twitter:image" content="Design Studio Logo - 'os' in Blue and Grey.png">
+    <meta name="twitter:image:alt" content="Operating Systems Visualizer Logo">
+    
+    <!-- Additional SEO -->
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://yourwebsite.com">
+    <style>
+        :root {
+            --bg-color: #f5f5f7;
+            --container-bg: white;
+            --text-color: #333;
+            --text-secondary: #666;
+            --heading-color: #2c3e50;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --card-hover-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --container-bg: #2d2d2d;
+            --text-color: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --heading-color: #ffffff;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            --card-hover-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 20px;
+            position: relative;
+        }
+        .theme-toggle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--container-bg);
+            border: 2px solid #3498db;
+            color: var(--text-color);
+            padding: 10px 15px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: var(--card-shadow);
+        }
+        .theme-toggle:hover {
+            background: #3498db;
+            color: white;
+            transform: translateY(-2px);
+        }
+        h1 {
+            text-align: center;
+            color: var(--heading-color);
+            margin-bottom: 40px;
+            margin-top: 60px;
+        }
+        .algorithm-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .algorithm-card {
+            background: var(--container-bg);
+            border-radius: 30px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+        .algorithm-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--card-hover-shadow);
+        }
+        .algorithm-card h2 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        .algorithm-card p {
+            margin: 0;
+            color: var(--text-secondary);
+        }
+        .features {
+            margin-top: 15px;
+            padding-left: 20px;
+        }
+        .features li {
+            margin: 5px 0;
+            color: var(--text-secondary);
+        }
+        /* Color schemes for different sections */
+        .cpu-scheduling {
+            border-top: 4px solid #3498db;
+        }
+        .cpu-scheduling h2, .cpu-scheduling .features li:before {
+            color: #3498db;
+        }
+        .bankers-algorithm {
+            border-top: 4px solid #e74c3c;
+        }
+        .bankers-algorithm h2, .bankers-algorithm .features li:before {
+            color: #e74c3c;
+        }
+        .producer-consumer {
+            border-top: 4px solid #ff6b6b;
+        }
+        .producer-consumer h2, .producer-consumer .features li:before {
+            color: #ff6b6b;
+        }
+        .producer-consumer:hover {
+            box-shadow: 0 6px 12px rgba(255, 107, 107, 0.15);
+        }
+        .sync-problem {
+            border-top: 4px solid #e67e22;
+        }
+        .sync-problem h2, .sync-problem .features li:before {
+            color: #e67e22;
+        }
+        .sync-problem:hover {
+            box-shadow: 0 6px 12px rgba(230, 126, 34, 0.15);
+        }
+        .readers-writers {
+            border-top: 4px solid #17a2b8;
+        }
+        .readers-writers h2, .readers-writers .features li:before {
+            color: #17a2b8;
+        }
+        .readers-writers:hover {
+            box-shadow: 0 6px 12px rgba(23, 162, 184, 0.15);
+        }
+        .resource-allocation {
+            border-top: 4px solid #9b59b6;
+        }
+        .resource-allocation h2, .resource-allocation .features li:before {
+            color: #9b59b6;
+        }
+        .memory-management {
+            border-top: 4px solid #2ecc71;
+        }
+        .memory-management h2, .memory-management .features li:before {
+            color: #2ecc71;
+        }
+
+        /* Dark mode specific hover effects */
+        [data-theme="dark"] .cpu-scheduling:hover {
+            box-shadow: 0 6px 12px rgba(52, 152, 219, 0.3);
+        }
+        [data-theme="dark"] .bankers-algorithm:hover {
+            box-shadow: 0 6px 12px rgba(231, 76, 60, 0.3);
+        }
+        [data-theme="dark"] .producer-consumer:hover {
+            box-shadow: 0 6px 12px rgba(255, 107, 107, 0.3);
+        }
+        [data-theme="dark"] .sync-problem:hover {
+            box-shadow: 0 6px 12px rgba(230, 126, 34, 0.3);
+        }
+        [data-theme="dark"] .readers-writers:hover {
+            box-shadow: 0 6px 12px rgba(23, 162, 184, 0.3);
+        }
+        [data-theme="dark"] .resource-allocation:hover {
+            box-shadow: 0 6px 12px rgba(155, 89, 182, 0.3);
+        }
+        [data-theme="dark"] .memory-management:hover {
+            box-shadow: 0 6px 12px rgba(46, 204, 113, 0.3);
+        }
+
+        /* Remove all mobile-specific styles and make desktop design responsive */
+        @media screen and (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 15px;
+            }
+            
+            .theme-toggle {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                padding: 8px 12px;
+                font-size: 0.9em;
+                min-width: 100px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+                margin-top: 60px;
+                margin-bottom: 30px;
+            }
+            
+            .algorithm-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                margin-top: 15px;
+            }
+            
+            .algorithm-card {
+                padding: 15px;
+                min-width: unset;
+            }
+            
+            .algorithm-card h2 {
+                font-size: 1.3em;
+            }
+            
+            .features {
+                padding-left: 15px;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .container {
+                margin: 5px;
+                padding: 10px;
+            }
+            
+            .theme-toggle {
+                top: 5px;
+                right: 5px;
+                padding: 6px 10px;
+                font-size: 0.8em;
+                min-width: 80px;
+            }
+            
+            h1 {
+                font-size: 1.5em;
+                margin-top: 50px;
+                margin-bottom: 20px;
+            }
+            
+            .algorithm-card {
+                padding: 12px;
+                border-radius: 20px;
+            }
+            
+            .algorithm-card h2 {
+                font-size: 1.2em;
+                margin-bottom: 10px;
+            }
+            
+            .algorithm-card p {
+                font-size: 0.9em;
+            }
+            
+            .features li {
+                font-size: 0.85em;
+                margin: 3px 0;
+            }
+        }
+    </style>
+</head>
+  <body>
+    <div class="container">
+        <button class="theme-toggle" onclick="toggleTheme()">🌙 Dark Mode</button>
+        <h1>Operating Systems Visualizer</h1>
+        
+        <div class="algorithm-grid">
+            <!-- CPU Scheduling -->
+            <a href="Try _OS.html" class="algorithm-card cpu-scheduling">
+                <h2>CPU Scheduling</h2>
+                <p>Visualize different CPU scheduling algorithms</p>
+                <ul class="features">
+                    <li>First Come First Serve (FCFS)</li>
+                    <li>Shortest Job First (SJF)</li>
+                    <li>Round Robin (RR)</li>
+                    <li>Priority Scheduling</li>
+                </ul>
+            </a>
+
+            <!-- Banker's Algorithm -->
+            <a href="bankers_algorithm.html" class="algorithm-card bankers-algorithm">
+                <h2>Banker's Algorithm</h2>
+                <p>Deadlock avoidance algorithm visualization</p>
+                <ul class="features">
+                    <li>Resource allocation matrices</li>
+                    <li>Safety check algorithm</li>
+                    <li>Resource request handling</li>
+                    <li>Step-by-step execution</li>
+                </ul>
+            </a>
+
+            <!-- Producer-Consumer -->
+            <a href="producer_consumer.html" class="algorithm-card producer-consumer">
+                <h2>Producer-Consumer Problem</h2>
+                <p>Visualize the classic Producer-Consumer synchronization problem</p>
+                <ul class="features">
+                    <li>Buffer visualization</li>
+                    <li>Semaphore simulation</li>
+                    <li>Multiple producers and consumers</li>
+                    <li>Step-by-step execution</li>
+                </ul>
+            </a>
+
+            <!-- Dining Philosophers -->
+            <a href="dining_philosophers.html" class="algorithm-card sync-problem">
+                <h2>Dining Philosophers Problem</h2>
+                <p>Interactive simulation of the Dining Philosophers problem</p>
+                <ul class="features">
+                    <li>Philosopher state visualization</li>
+                    <li>Chopstick resource management</li>
+                    <li>Deadlock risk indicator</li>
+                    <li>Step-by-step execution</li>
+                </ul>
+            </a>
+
+            <!-- Readers-Writers -->
+            <a href="readers_writers.html" class="algorithm-card readers-writers">
+                <h2>Readers-Writers Problem</h2>
+                <p>Simulate the Readers-Writers synchronization problem</p>
+                <ul class="features">
+                    <li>Reader and writer process visualization</li>
+                    <li>Starvation risk indicator</li>
+                    <li>Semaphore simulation</li>
+                    <li>Step-by-step execution</li>
+                </ul>
+            </a>
+
+            <!-- Resource Allocation Graph -->
+            <a href="resource_allocation.html" class="algorithm-card resource-allocation">
+                <h2>Resource Allocation Graph</h2>
+                <p>Deadlock detection and avoidance visualization</p>
+                <ul class="features">
+                    <li>Interactive graph creation</li>
+                    <li>Deadlock detection</li>
+                    <li>Deadlock avoidance</li>
+                    <li>Step-by-step analysis</li>
+                </ul>
+            </a>
+
+            <!-- Memory Management -->
+            <a href="memory_management.html" class="algorithm-card memory-management">
+                <h2>Memory Management</h2>
+                <p>Memory allocation and page replacement algorithms</p>
+                <ul class="features">
+                    <li>First/Best/Worst Fit</li>
+                    <li>Page Replacement (FIFO)</li>
+                    <li>Page Replacement (Optimal)</li>
+                    <li>Page Replacement (LRU)</li>
+                </ul>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            const body = document.body;
+            const button = document.querySelector('.theme-toggle');
+            
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+                if (button) button.innerHTML = '🌙 Dark Mode';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                if (button) button.innerHTML = '☀️ Light Mode';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Load saved theme on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme');
+            const button = document.querySelector('.theme-toggle');
+            
+            if (savedTheme === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+                if (button) button.innerHTML = '☀️ Light Mode';
+            }
+        });
+    </script>
+</body>
+</html> 

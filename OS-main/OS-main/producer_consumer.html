@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Producer-Consumer Problem</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #f5f5f7;
+            --container-bg: white;
+            --text-color: #333;
+            --text-secondary: #666;
+            --card-bg: #f8f9fa;
+            --card-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            --border-color: #ddd;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --container-bg: #2d2d2d;
+            --text-color: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --card-bg: #3a3a3a;
+            --card-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            --border-color: #555;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .navbar {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background-size: 200% 200%;
+      padding: 20px 0;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-radius: 0 0 30px 30px;
+      margin-bottom: 20px;
+      animation: gradientShift 8s ease infinite, slideDown 0.8s ease-out;
+    }
+    
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
+    @keyframes slideDown {
+      from {
+        transform: translateY(-100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0 30px;
+      position: relative;
+      gap: 40px;
+      animation: fadeInUp 1s ease-out 0.3s both;
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .nav-brand {
+      color: white;
+      font-size: 1.8em;
+      font-weight: 800;
+      text-decoration: none;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      letter-spacing: -0.5px;
+      transition: all 0.3s ease;
+      animation: pulse 2s ease-in-out infinite alternate;
+    }
+    .nav-brand:hover {
+      transform: scale(1.05) rotate(2deg);
+      text-shadow: 0 4px 8px rgba(0,0,0,0.4);
+      animation-play-state: paused;
+    }
+    
+    @keyframes pulse {
+      from {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      }
+      to {
+        text-shadow: 0 4px 12px rgba(255,255,255,0.3);
+      }
+    }
+    .nav-links {
+      display: flex;
+      gap: 15px;
+      background: rgba(255,255,255,0.1);
+      padding: 10px 15px;
+      border-radius: 30px;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    .nav-links:hover {
+      background: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-3px); }
+    }
+    .nav-link {
+      color: white;
+      text-decoration: none;
+      padding: 12px 20px;
+      border-radius: 30px;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      position: relative;
+      overflow: hidden;
+      animation: slideInFromLeft 0.6s ease-out forwards;
+      opacity: 0;
+    }
+    
+    .nav-link:nth-child(1) { animation-delay: 0.1s; }
+    .nav-link:nth-child(2) { animation-delay: 0.2s; }
+    .nav-link:nth-child(3) { animation-delay: 0.3s; }
+    .nav-link:nth-child(4) { animation-delay: 0.4s; }
+    .nav-link:nth-child(5) { animation-delay: 0.5s; }
+    .nav-link:nth-child(6) { animation-delay: 0.6s; }
+    .nav-link:nth-child(7) { animation-delay: 0.7s; }
+    
+    @keyframes slideInFromLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    .nav-link::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    .nav-link:hover::before {
+      left: 100%;
+    }
+    .nav-link:hover {
+      background: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .nav-link.active {
+      background: rgba(255,255,255,0.3);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .theme-toggle {
+        background: var(--container-bg);
+        border: 3px solid #ff6b6b;
+        color: #ff6b6b;
+        padding: 12px 20px;
+        border-radius: 30px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        font-size: 1.1em;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        min-width: 120px;
+        animation: bounceIn 1s ease-out 0.8s both, glow 2s ease-in-out infinite alternate;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .theme-toggle::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(255, 107, 107, 0.3);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        transition: all 0.3s ease;
+    }
+    
+    .theme-toggle:hover {
+        background: #ff6b6b;
+        color: white;
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 6px 12px rgba(255, 107, 107, 0.4);
+        animation-play-state: paused;
+    }
+    
+    .theme-toggle:hover::after {
+        width: 100%;
+        height: 100%;
+    }
+    
+    @keyframes bounceIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.3) translateX(50px);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.05) translateX(0);
+      }
+      70% {
+        transform: scale(0.9) translateX(0);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateX(0);
+      }
+    }
+    
+    @keyframes glow {
+      from {
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15), 0 0 0 rgba(255, 107, 107, 0.4);
+      }
+      to {
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15), 0 0 20px rgba(255, 107, 107, 0.6);
+      }
+    }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background: var(--container-bg);
+            padding: 20px;
+            border-radius: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #ff6b6b;
+            font-size: 1.8em;
+        }
+        .back-button {
+            position: relative;
+            display: inline-block;
+            background: #ff6b6b;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: bold;
+            transition: background 0.3s ease;
+            margin-bottom: 20px;
+        }
+        .back-button:hover {
+            background: #ff5252;
+        }
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s ease, box-shadow 0.3s;
+            font-size: 0.9em;
+        }
+        button:hover {
+            background: #ff5252;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .simulation-area {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .visualization {
+            padding: 15px;
+            background: var(--container-bg);
+            border-radius: 30px;
+            box-shadow: var(--card-shadow);
+            transition: background-color 0.3s ease;
+        }
+        .stats {
+            padding: 15px;
+            background: var(--container-bg);
+            border-radius: 30px;
+            box-shadow: var(--card-shadow);
+            transition: background-color 0.3s ease;
+        }
+        .buffer {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        .buffer-state {
+            margin: 8px 0;
+            padding: 8px;
+            background: var(--card-bg);
+            border-radius: 30px;
+            text-align: center;
+            transition: background-color 0.3s ease;
+            font-size: 0.9em;
+        }
+        .buffer-state.empty {
+            background: #e74c3c;
+            color: white;
+        }
+        .buffer-state.full {
+            background: #2ecc71;
+            color: white;
+        }
+        .buffer-state.partial {
+            background: #f1c40f;
+            color: black;
+        }
+        .buffer-cell {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #ff6b6b;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            position: relative;
+            font-size: 0.85em;
+        }
+        .buffer-cell.filled {
+            background: #ff6b6b;
+            color: white;
+        }
+        .buffer-cell.empty {
+            border-style: dashed;
+            color: var(--text-secondary);
+        }
+        .buffer-cell::after {
+            content: attr(data-index);
+            position: absolute;
+            bottom: -20px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .semaphore-status {
+            display: flex;
+            gap: 15px;
+            margin: 8px 0;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .semaphore {
+            padding: 4px 8px;
+            border-radius: 30px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            transition: background-color 0.3s ease;
+            font-size: 0.85em;
+        }
+        .semaphore-value {
+            font-weight: bold;
+            color: #ff6b6b;
+        }
+        .participant {
+            padding: 12px;
+            margin: 8px 0;
+            background: var(--card-bg);
+            border-radius: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+        .participant.active {
+            background: #ff6b6b;
+            color: white;
+        }
+        .chart-container {
+            margin-top: 15px;
+            height: 180px;
+        }
+        .step-by-step {
+            margin-top: 15px;
+            padding: 12px;
+            background: var(--container-bg);
+            border-radius: 30px;
+            box-shadow: var(--card-shadow);
+            transition: background-color 0.3s ease;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .step {
+            padding: 8px;
+            margin: 4px 0;
+            border-left: 3px solid #ff6b6b;
+            background: var(--card-bg);
+            transition: background-color 0.3s ease;
+            font-size: 0.85em;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+        .metric-card {
+            padding: 12px;
+            background: var(--container-bg);
+            border-radius: 30px;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+        .metric-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ff6b6b;
+        }
+        .metric-label {
+            color: var(--text-secondary);
+            margin-top: 4px;
+            font-size: 0.85em;
+        }
+        .buffer-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        .buffer-controls input {
+            width: 70px;
+            padding: 6px 10px;
+            border: 2px solid var(--border-color);
+            border-radius: 30px;
+            background: var(--container-bg);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .buffer-controls input:focus {
+            outline: none;
+            border-color: #ff6b6b;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1), 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+        }
+        
+        .buffer-controls input:hover {
+            border-color: #ff6b6b;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        /* Mobile Menu Toggle Button */
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 12px 15px;
+            border-radius: 50px;
+            z-index: 1001;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            width: 50px;
+            height: 50px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-menu-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+
+        /* Mobile Overlay */
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1002;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .mobile-overlay.show {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Mobile Sidebar */
+        .mobile-sidebar {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 280px;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 1003;
+            transition: left 0.3s ease;
+            overflow-y: auto;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+            border-radius: 0 50px 50px 0;
+        }
+
+        .mobile-sidebar.open {
+            left: 0;
+        }
+
+        .mobile-sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            }
+            
+        .mobile-sidebar-brand {
+            color: white;
+            font-size: 1.4em;
+            font-weight: 800;
+            text-decoration: none;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .mobile-close-btn {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+                padding: 8px 12px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-close-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+            transform: scale(1.05);
+        }
+
+        .mobile-nav-links {
+            padding: 20px 0;
+        }
+
+        .mobile-nav-link {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 15px 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+            margin: 2px 0;
+        }
+
+        .mobile-nav-link:hover,
+        .mobile-nav-link.active {
+            background: rgba(255,255,255,0.2);
+            border-left-color: white;
+            transform: translateX(5px);
+        }
+
+        .mobile-theme-toggle {
+            margin: 20px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            display: block;
+            width: calc(100% - 40px);
+        }
+
+        .mobile-theme-toggle:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+            transform: scale(1.02);
+        }
+
+        /* Mobile Responsive Design */
+        @media screen and (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: flex !important;
+            }
+
+            .navbar {
+                display: none;
+            }
+            
+            .container {
+                margin: 10px;
+                padding: 15px;
+                margin-top: 80px;
+            }
+            
+            h1 {
+                font-size: 1.5em;
+            }
+            
+            .simulation-area {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .controls {
+                gap: 6px;
+                justify-content: center;
+            }
+            
+            .buffer-controls {
+                flex-direction: column;
+                align-items: center;
+                gap: 5px;
+            }
+            
+            .buffer-cell {
+                width: 40px;
+                height: 40px;
+                font-size: 0.8em;
+            }
+            
+            .chart-container {
+                height: 150px;
+            }
+            
+            .participant {
+                padding: 8px;
+                font-size: 0.85em;
+            }
+            
+            .metrics {
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+                gap: 8px;
+            }
+            
+            .metric-card {
+                padding: 8px;
+            }
+            
+            .metric-value {
+                font-size: 16px;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .container {
+                margin: 5px;
+                padding: 10px;
+                margin-top: 80px;
+            }
+            
+            h1 {
+                font-size: 1.3em;
+                margin-bottom: 10px;
+            }
+            
+            .controls {
+                gap: 4px;
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            button {
+                padding: 6px 12px;
+                font-size: 0.85em;
+                margin: 2px;
+            }
+            
+            .buffer-controls {
+                flex-direction: row;
+                gap: 8px;
+                margin-bottom: 8px;
+            }
+            
+            .buffer-controls input {
+                width: 50px;
+                padding: 4px 6px;
+                font-size: 11px;
+            }
+            
+            .buffer {
+                gap: 4px;
+                justify-content: center;
+            }
+            
+            .buffer-cell {
+                width: 35px;
+                height: 35px;
+                font-size: 0.75em;
+            }
+            
+            .buffer-state {
+                padding: 6px;
+                font-size: 0.85em;
+            }
+            
+            .semaphore-status {
+                gap: 8px;
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .semaphore {
+                padding: 3px 6px;
+                font-size: 0.8em;
+            }
+            
+            .visualization {
+                padding: 10px;
+            }
+            
+            .stats {
+                padding: 10px;
+            }
+            
+            .participant {
+                padding: 6px;
+                font-size: 0.8em;
+                min-height: auto;
+            }
+            
+            .metrics {
+                grid-template-columns: 1fr;
+                gap: 6px;
+            }
+            
+            .metric-card {
+                padding: 6px;
+            }
+            
+            .metric-value {
+                font-size: 14px;
+            }
+            
+            .metric-label {
+                font-size: 0.8em;
+            }
+            
+            .chart-container {
+                height: 120px;
+            }
+            
+            .step-by-step {
+                max-height: 150px;
+                padding: 8px;
+            }
+            
+            .step {
+                padding: 6px;
+                font-size: 0.8em;
+            }
+
+            .mobile-sidebar {
+                width: 100%;
+                left: -100%;
+            }
+
+            .mobile-menu-toggle {
+                top: 15px;
+                left: 15px;
+                width: 45px;
+                height: 45px;
+                font-size: 1.3em;
+                border-radius: 35px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+    
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" onclick="closeMobileMenu()"></div>
+    
+    <!-- Mobile Sidebar -->
+    <div class="mobile-sidebar" id="mobileSidebar">
+      <div class="mobile-sidebar-header">
+        <a href="index.html" class="mobile-sidebar-brand">OS Visualizer</a>
+        <button class="mobile-close-btn" onclick="closeMobileMenu()">×</button>
+      </div>
+      <div class="mobile-nav-links">
+        <a href="producer_consumer.html" class="mobile-nav-link active">Producer-Consumer</a>
+        <a href="dining_philosophers.html" class="mobile-nav-link">Dining Philosophers</a>
+        <a href="readers_writers.html" class="mobile-nav-link">Readers-Writers</a>
+        <a href="bankers_algorithm.html" class="mobile-nav-link">Banker's Algorithm</a>
+        <a href="memory_management.html" class="mobile-nav-link">Memory Management</a>
+        <a href="resource_allocation.html" class="mobile-nav-link">Resource Allocation</a>
+        <a href="Try _OS.html" class="mobile-nav-link">CPU Scheduling</a>
+      </div>
+      <button class="mobile-theme-toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+    </div>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-brand">OS Visualizer</a>
+            <div class="nav-links">
+                <a href="producer_consumer.html" class="nav-link active">Producer-Consumer</a>
+                <a href="dining_philosophers.html" class="nav-link">Dining Philosophers</a>
+                <a href="readers_writers.html" class="nav-link">Readers-Writers</a>
+                <a href="bankers_algorithm.html" class="nav-link">Banker's Algorithm</a>
+                <a href="memory_management.html" class="nav-link">Memory Management</a>
+                <a href="resource_allocation.html" class="nav-link">Resource Allocation</a>
+                <a href="Try _OS.html" class="nav-link">CPU Scheduling</a>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Producer-Consumer Problem</h1>
+
+        <div class="controls">
+            <div class="buffer-controls">
+                <label for="bufferSize">Buffer Size:</label>
+                <input type="number" id="bufferSize" min="1" max="10" value="5">
+                <button onclick="updateBufferSize()">Update Buffer Size</button>
+            </div>
+            <button onclick="addProducer()">Add Producer</button>
+            <button onclick="addConsumer()">Add Consumer</button>
+            <button onclick="startProducerConsumer()">Start Simulation</button>
+            <button onclick="stopSimulation()">Stop Simulation</button>
+            <button onclick="resetSimulation()">Reset</button>
+        </div>
+
+        <div class="simulation-area">
+            <div class="visualization">
+                <h3>Buffer State</h3>
+                <div class="buffer" id="buffer"></div>
+                <div class="participants">
+                    <h3>Producers</h3>
+                    <div id="producers"></div>
+                    <h3>Consumers</h3>
+                    <div id="consumers"></div>
+                </div>
+            </div>
+            <div class="stats">
+                <h3>Statistics</h3>
+                <div class="metrics">
+                    <div class="metric-card">
+                        <div class="metric-value" id="producedCount">0</div>
+                        <div class="metric-label">Items Produced</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="consumedCount">0</div>
+                        <div class="metric-label">Items Consumed</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="bufferUtilization">0%</div>
+                        <div class="metric-label">Buffer Utilization</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="producerConsumerChart"></canvas>
+                </div>
+                <div class="step-by-step" id="producerConsumerSteps"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===================================================================
+        // BOUNDED BUFFER PROBLEM IMPLEMENTATION USING MONITORS
+        // ===================================================================
+
+        /**
+         * Monitor Class - Implements monitor synchronization pattern
+         * Provides mutual exclusion and condition variable support
+         */
+        class Monitor {
+            constructor() {
+                this.mutex = Promise.resolve(); // Simulates mutex lock
+                this.conditions = new Map(); // Condition variables storage
+            }
+
+            /**
+             * Acquire monitor lock (enter critical section)
+             */
+            async acquire() {
+                const currentMutex = this.mutex;
+                let releaseMutex;
+                this.mutex = new Promise(resolve => {
+                    releaseMutex = resolve;
+                });
+                await currentMutex;
+                return releaseMutex;
+            }
+
+            /**
+             * Create a condition variable
+             */
+            createCondition(name) {
+                this.conditions.set(name, {
+                    waiters: [],
+                    name: name
+                });
+                return name;
+            }
+
+            /**
+             * Wait on a condition variable (releases monitor and waits)
+             */
+            async wait(conditionName, releaseMutex) {
+                const condition = this.conditions.get(conditionName);
+                if (!condition) throw new Error(`Condition ${conditionName} not found`);
+
+                return new Promise(resolve => {
+                    condition.waiters.push(resolve);
+                    releaseMutex(); // Release monitor before waiting
+                });
+            }
+
+            /**
+             * Signal a condition variable (notify one waiting thread)
+             */
+            notify(conditionName) {
+                const condition = this.conditions.get(conditionName);
+                if (!condition) throw new Error(`Condition ${conditionName} not found`);
+
+                if (condition.waiters.length > 0) {
+                    const waiter = condition.waiters.shift();
+                    // Schedule the waiter to run after current thread releases monitor
+                    setTimeout(() => waiter(), 0);
+                }
+            }
+
+            /**
+             * Signal all waiting threads on a condition variable
+             */
+            notifyAll(conditionName) {
+                const condition = this.conditions.get(conditionName);
+                if (!condition) throw new Error(`Condition ${conditionName} not found`);
+
+                const waiters = [...condition.waiters];
+                condition.waiters = [];
+                waiters.forEach(waiter => {
+                    setTimeout(() => waiter(), 0);
+                });
+            }
+        }
+
+        /**
+         * Bounded Buffer Class - Thread-safe buffer implementation using monitors
+         */
+        class BoundedBuffer {
+            constructor(capacity) {
+                this.capacity = capacity;
+                this.buffer = [];
+                this.monitor = new Monitor();
+                
+                // Create condition variables
+                this.notFull = this.monitor.createCondition('notFull');   // For producers
+                this.notEmpty = this.monitor.createCondition('notEmpty'); // For consumers
+                
+                // Statistics
+                this.totalProduced = 0;
+                this.totalConsumed = 0;
+                this.operationLog = [];
+            }
+
+            /**
+             * Producer operation - Add item to buffer
+             */
+            async produce(item, producerId) {
+                const release = await this.monitor.acquire();
+                
+                try {
+                    // Wait while buffer is full
+                    while (this.buffer.length >= this.capacity) {
+                        this.logOperation(`Producer ${producerId} waiting - buffer full`);
+                        await this.updateVisualization();
+                        
+                        // Release monitor and wait on notFull condition
+                        const newRelease = await this.monitor.wait(this.notFull, release);
+                        // Re-acquire monitor after being notified
+                        const reacquireRelease = await this.monitor.acquire();
+                        release = reacquireRelease; // Update release function
+                    }
+
+                    // Critical Section: Add item to buffer
+                    this.buffer.push(item);
+                    this.totalProduced++;
+                    
+                    this.logOperation(`Producer ${producerId} produced: ${item.name} (Buffer: ${this.buffer.length}/${this.capacity})`);
+                    await this.updateVisualization();
+                    
+                    // Signal consumers that buffer is not empty
+                    this.monitor.notify(this.notEmpty);
+                    
+                } finally {
+                    release(); // Always release monitor
+                }
+            }
+
+            /**
+             * Consumer operation - Remove item from buffer
+             */
+            async consume(consumerId) {
+                const release = await this.monitor.acquire();
+                
+                try {
+                    // Wait while buffer is empty
+                    while (this.buffer.length === 0) {
+                        this.logOperation(`Consumer ${consumerId} waiting - buffer empty`);
+                        await this.updateVisualization();
+                        
+                        // Release monitor and wait on notEmpty condition
+                        await this.monitor.wait(this.notEmpty, release);
+                        // Re-acquire monitor after being notified
+                        const reacquireRelease = await this.monitor.acquire();
+                        release = reacquireRelease; // Update release function
+                    }
+
+                    // Critical Section: Remove item from buffer
+                    const item = this.buffer.shift();
+                    this.totalConsumed++;
+                    
+                    this.logOperation(`Consumer ${consumerId} consumed: ${item.name} (Buffer: ${this.buffer.length}/${this.capacity})`);
+                    await this.updateVisualization();
+                    
+                    // Signal producers that buffer is not full
+                    this.monitor.notify(this.notFull);
+                    
+                    return item;
+                    
+                } finally {
+                    release(); // Always release monitor
+                }
+            }
+
+            /**
+             * Get current buffer state
+             */
+            getState() {
+                return {
+                    buffer: [...this.buffer],
+                    size: this.buffer.length,
+                    capacity: this.capacity,
+                    isEmpty: this.buffer.length === 0,
+                    isFull: this.buffer.length >= this.capacity,
+                    totalProduced: this.totalProduced,
+                    totalConsumed: this.totalConsumed
+                };
+            }
+
+            /**
+             * Log operation with timestamp
+             */
+            logOperation(message) {
+                const timestamp = new Date().toLocaleTimeString();
+                this.operationLog.push({
+                    timestamp,
+                    message
+                });
+                
+                // Keep only last 20 operations
+                if (this.operationLog.length > 20) {
+                    this.operationLog.shift();
+                }
+                
+                this.updateStepByStepLog();
+            }
+
+            /**
+             * Update step-by-step log display
+             */
+            updateStepByStepLog() {
+                const container = document.getElementById('producerConsumerSteps');
+                if (container) {
+                    container.innerHTML = this.operationLog
+                        .slice(-10) // Show last 10 operations
+                        .reverse()
+                        .map(log => `<div class="step">${log.timestamp} - ${log.message}</div>`)
+                        .join('');
+                }
+            }
+
+            /**
+             * Update visual representation
+             */
+            async updateVisualization() {
+                await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for visualization
+                updateBufferDisplay();
+                updateMetricsDisplay();
+            }
+        }
+
+        /**
+         * Producer Thread Simulation
+         */
+        class Producer {
+            constructor(id, buffer, productionRate = 2000) {
+                this.id = id;
+                this.buffer = buffer;
+                this.productionRate = productionRate;
+                this.isRunning = false;
+                this.itemCounter = 0;
+            }
+
+            /**
+             * Start producer thread
+             */
+            async start() {
+                this.isRunning = true;
+                updateProducerStatus(this.id, 'Running');
+                
+                while (this.isRunning) {
+                    try {
+                        // Create item to produce
+                        const item = {
+                            name: `Item-${this.id}-${++this.itemCounter}`,
+                            producerId: this.id,
+                            timestamp: Date.now()
+                        };
+
+                        updateProducerStatus(this.id, 'Producing');
+                        
+                        // Produce item (enter monitor)
+                        await this.buffer.produce(item, this.id);
+                        
+                        updateProducerStatus(this.id, 'Waiting');
+                        
+                        // Wait before next production
+                        await this.sleep(this.productionRate + Math.random() * 1000);
+                        
+                    } catch (error) {
+                        console.error(`Producer ${this.id} error:`, error);
+                        break;
+                    }
+                }
+                
+                updateProducerStatus(this.id, 'Stopped');
+            }
+
+            /**
+             * Stop producer thread
+             */
+            stop() {
+                this.isRunning = false;
+            }
+
+            /**
+             * Sleep utility function
+             */
+            sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        }
+
+        /**
+         * Consumer Thread Simulation
+         */
+        class Consumer {
+            constructor(id, buffer, consumptionRate = 2500) {
+                this.id = id;
+                this.buffer = buffer;
+                this.consumptionRate = consumptionRate;
+                this.isRunning = false;
+            }
+
+            /**
+             * Start consumer thread
+             */
+            async start() {
+                this.isRunning = true;
+                updateConsumerStatus(this.id, 'Running');
+                
+                while (this.isRunning) {
+                    try {
+                        updateConsumerStatus(this.id, 'Consuming');
+                        
+                        // Consume item (enter monitor)
+                        const item = await this.buffer.consume(this.id);
+                        
+                        updateConsumerStatus(this.id, 'Waiting');
+                        
+                        // Process consumed item
+                        await this.processItem(item);
+                        
+                        // Wait before next consumption
+                        await this.sleep(this.consumptionRate + Math.random() * 1000);
+                        
+                    } catch (error) {
+                        console.error(`Consumer ${this.id} error:`, error);
+                        break;
+                    }
+                }
+                
+                updateConsumerStatus(this.id, 'Stopped');
+            }
+
+            /**
+             * Stop consumer thread
+             */
+            stop() {
+                this.isRunning = false;
+            }
+
+            /**
+             * Process consumed item
+             */
+            async processItem(item) {
+                // Simulate item processing time
+                await this.sleep(200 + Math.random() * 300);
+            }
+
+            /**
+             * Sleep utility function
+             */
+            sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        }
+
+        // ===================================================================
+        // GLOBAL SIMULATION STATE
+        // ===================================================================
+
+        let boundedBuffer = null;
+        let producers = [];
+        let consumers = [];
+        let simulationRunning = false;
+        let chart;
+
+        /**
+         * Initialize bounded buffer simulation
+         */
+        function initializeSimulation() {
+            const bufferSize = parseInt(document.getElementById('bufferSize').value) || 5;
+            boundedBuffer = new BoundedBuffer(bufferSize);
+            
+            // Clear existing threads
+            producers.forEach(p => p.stop());
+            consumers.forEach(c => c.stop());
+            producers = [];
+            consumers = [];
+            
+            updateBufferDisplay();
+            updateMetricsDisplay();
+            initializeChart();
+        }
+
+        /**
+         * Add producer thread
+         */
+        function addProducer() {
+            if (!boundedBuffer) initializeSimulation();
+            
+            const producerId = producers.length + 1;
+            const producer = new Producer(producerId, boundedBuffer);
+            producers.push(producer);
+            updateProducersDisplay();
+        }
+
+        /**
+         * Add consumer thread
+         */
+        function addConsumer() {
+            if (!boundedBuffer) initializeSimulation();
+            
+            const consumerId = consumers.length + 1;
+            const consumer = new Consumer(consumerId, boundedBuffer);
+            consumers.push(consumer);
+            updateConsumersDisplay();
+        }
+
+        /**
+         * Start producer-consumer simulation
+         */
+        function startProducerConsumer() {
+            if (!boundedBuffer) initializeSimulation();
+            if (simulationRunning) return;
+            
+            simulationRunning = true;
+            
+            // Start all producer threads
+            producers.forEach(producer => {
+                if (!producer.isRunning) {
+                    producer.start().catch(console.error);
+                }
+            });
+            
+            // Start all consumer threads
+            consumers.forEach(consumer => {
+                if (!consumer.isRunning) {
+                    consumer.start().catch(console.error);
+                }
+            });
+            
+            boundedBuffer.logOperation('Simulation started');
+        }
+
+        /**
+         * Stop simulation
+         */
+        function stopSimulation() {
+            simulationRunning = false;
+            
+            producers.forEach(p => p.stop());
+            consumers.forEach(c => c.stop());
+            
+            if (boundedBuffer) {
+                boundedBuffer.logOperation('Simulation stopped');
+            }
+        }
+
+        /**
+         * Reset simulation
+         */
+        function resetSimulation() {
+            stopSimulation();
+            
+            setTimeout(() => {
+                producers = [];
+                consumers = [];
+                boundedBuffer = null;
+                updateProducersDisplay();
+                updateConsumersDisplay();
+                updateBufferDisplay();
+                updateMetricsDisplay();
+                initializeChart();
+                
+                // Clear log
+                const stepsContainer = document.getElementById('producerConsumerSteps');
+                if (stepsContainer) {
+                    stepsContainer.innerHTML = '<div class="step">System reset - Ready to start</div>';
+                }
+            }, 500);
+        }
+
+        /**
+         * Update buffer size
+         */
+        function updateBufferSize() {
+            const wasRunning = simulationRunning;
+            stopSimulation();
+            
+            setTimeout(() => {
+                initializeSimulation();
+                if (wasRunning) {
+                    startProducerConsumer();
+                }
+            }, 500);
+        }
+
+        // ===================================================================
+        // DISPLAY UPDATE FUNCTIONS
+        // ===================================================================
+
+        /**
+         * Update buffer visual display
+         */
+        function updateBufferDisplay() {
+            const bufferContainer = document.getElementById('buffer');
+            if (!bufferContainer || !boundedBuffer) return;
+            
+            const state = boundedBuffer.getState();
+            
+            // Buffer state indicator
+            const stateDiv = document.createElement('div');
+            stateDiv.className = 'buffer-state';
+            
+            if (state.isEmpty) {
+                stateDiv.classList.add('empty');
+                stateDiv.textContent = 'Buffer State: Empty';
+            } else if (state.isFull) {
+                stateDiv.classList.add('full');
+                stateDiv.textContent = 'Buffer State: Full';
+            } else {
+                stateDiv.classList.add('partial');
+                stateDiv.textContent = `Buffer State: Partially Full (${state.size}/${state.capacity})`;
+            }
+
+            // Monitor status
+            const monitorStatus = document.createElement('div');
+            monitorStatus.className = 'semaphore-status';
+            monitorStatus.innerHTML = `
+                <div class="semaphore">
+                    Buffer Size: <span class="semaphore-value">${state.size}/${state.capacity}</span>
+                </div>
+                <div class="semaphore">
+                    Monitor: <span class="semaphore-value">Protected</span>
+                </div>
+                <div class="semaphore">
+                    Conditions: <span class="semaphore-value">notFull, notEmpty</span>
+                </div>
+            `;
+
+            // Buffer cells
+            const cellsContainer = document.createElement('div');
+            cellsContainer.className = 'buffer';
+            
+            for (let i = 0; i < state.capacity; i++) {
+                const cell = document.createElement('div');
+                cell.className = `buffer-cell ${i < state.size ? 'filled' : 'empty'}`;
+                cell.setAttribute('data-index', i);
+                
+                if (i < state.size && state.buffer[i]) {
+                    cell.textContent = state.buffer[i].name.split('-')[2] || 'Item';
+                    cell.title = `${state.buffer[i].name} (Producer ${state.buffer[i].producerId})`;
+                }
+                
+                cellsContainer.appendChild(cell);
+            }
+
+            bufferContainer.innerHTML = '';
+            bufferContainer.appendChild(stateDiv);
+            bufferContainer.appendChild(monitorStatus);
+            bufferContainer.appendChild(cellsContainer);
+        }
+
+        /**
+         * Update metrics display
+         */
+        function updateMetricsDisplay() {
+            if (!boundedBuffer) return;
+            
+            const state = boundedBuffer.getState();
+            const utilization = Math.round((state.size / state.capacity) * 100);
+            
+            const producedElement = document.getElementById('producedCount');
+            const consumedElement = document.getElementById('consumedCount');
+            const utilizationElement = document.getElementById('bufferUtilization');
+            
+            if (producedElement) producedElement.textContent = state.totalProduced;
+            if (consumedElement) consumedElement.textContent = state.totalConsumed;
+            if (utilizationElement) utilizationElement.textContent = `${utilization}%`;
+            
+            // Update chart
+            if (chart) {
+            const time = new Date().toLocaleTimeString();
+            chart.data.labels.push(time);
+                chart.data.datasets[0].data.push(state.size);
+                
+                // Keep only last 15 data points
+                if (chart.data.labels.length > 15) {
+                chart.data.labels.shift();
+                chart.data.datasets[0].data.shift();
+            }
+                
+                chart.update('none'); // Update without animation for better performance
+            }
+        }
+
+        /**
+         * Update producers display
+         */
+        function updateProducersDisplay() {
+            const container = document.getElementById('producers');
+            if (!container) return;
+            
+            container.innerHTML = producers.map(p => `
+                <div class="participant" id="producer-${p.id}">
+                    <span>Producer ${p.id}</span>
+                    <span id="producer-status-${p.id}">Waiting</span>
+                </div>
+            `).join('');
+        }
+
+        /**
+         * Update consumers display
+         */
+        function updateConsumersDisplay() {
+            const container = document.getElementById('consumers');
+            if (!container) return;
+            
+            container.innerHTML = consumers.map(c => `
+                <div class="participant" id="consumer-${c.id}">
+                    <span>Consumer ${c.id}</span>
+                    <span id="consumer-status-${c.id}">Waiting</span>
+                </div>
+            `).join('');
+        }
+
+        /**
+         * Update producer status
+         */
+        function updateProducerStatus(id, status) {
+            const statusElement = document.getElementById(`producer-status-${id}`);
+            const participantElement = document.getElementById(`producer-${id}`);
+            
+            if (statusElement) {
+                statusElement.textContent = status;
+            }
+            
+            if (participantElement) {
+                participantElement.classList.toggle('active', status === 'Producing');
+            }
+        }
+
+        /**
+         * Update consumer status
+         */
+        function updateConsumerStatus(id, status) {
+            const statusElement = document.getElementById(`consumer-status-${id}`);
+            const participantElement = document.getElementById(`consumer-${id}`);
+            
+            if (statusElement) {
+                statusElement.textContent = status;
+            }
+            
+            if (participantElement) {
+                participantElement.classList.toggle('active', status === 'Consuming');
+            }
+        }
+
+        /**
+         * Initialize chart
+         */
+        function initializeChart() {
+            const ctx = document.getElementById('producerConsumerChart');
+            if (!ctx) return;
+            
+            if (chart) {
+                chart.destroy();
+            }
+            
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Buffer Occupancy',
+                        data: [],
+                        borderColor: '#ff6b6b',
+                        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#ff6b6b',
+                        pointBorderColor: '#fff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 0 // Disable animation for better performance
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: { 
+                                color: getComputedStyle(document.documentElement)
+                                    .getPropertyValue('--text-color') || '#333'
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Buffer Occupancy Over Time',
+                            color: getComputedStyle(document.documentElement)
+                                .getPropertyValue('--text-color') || '#333'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { 
+                                display: true, 
+                                text: 'Items in Buffer',
+                                color: getComputedStyle(document.documentElement)
+                                    .getPropertyValue('--text-color') || '#333'
+                            },
+                            ticks: {
+                                color: getComputedStyle(document.documentElement)
+                                    .getPropertyValue('--text-color') || '#333'
+                            },
+                            grid: {
+                                color: getComputedStyle(document.documentElement)
+                                    .getPropertyValue('--border-color') || '#ddd'
+                            }
+                        },
+                        x: {
+                            title: { 
+                                display: true, 
+                                text: 'Time',
+                                color: getComputedStyle(document.documentElement)
+                                    .getPropertyValue('--text-color') || '#333'
+                            },
+                            ticks: {
+                                color: getComputedStyle(document.documentElement)
+                                    .getPropertyValue('--text-color') || '#333'
+                            },
+                            grid: {
+                                color: getComputedStyle(document.documentElement)
+                                    .getPropertyValue('--border-color') || '#ddd'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ===================================================================
+        // MOBILE MENU AND THEME FUNCTIONS
+        // ===================================================================
+
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('mobileSidebar');
+            const overlay = document.querySelector('.mobile-overlay');
+            
+            sidebar.classList.add('open');
+            overlay.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('mobileSidebar');
+            const overlay = document.querySelector('.mobile-overlay');
+            
+            sidebar.classList.remove('open');
+            overlay.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            const button = document.querySelector('.theme-toggle');
+            const mobileButton = document.querySelector('.mobile-theme-toggle');
+            
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+                if (button) button.innerHTML = '🌙';
+                if (mobileButton) mobileButton.innerHTML = '🌙 Toggle Theme';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                if (button) button.innerHTML = '☀️';
+                if (mobileButton) mobileButton.innerHTML = '☀️ Toggle Theme';
+                localStorage.setItem('theme', 'dark');
+            }
+            
+            // Reinitialize chart with new colors
+            if (chart) {
+                setTimeout(initializeChart, 100);
+            }
+        }
+
+        // ===================================================================
+        // INITIALIZATION
+        // ===================================================================
+
+        window.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme');
+            const button = document.querySelector('.theme-toggle');
+            const mobileButton = document.querySelector('.mobile-theme-toggle');
+            
+            if (savedTheme === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+                if (button) button.innerHTML = '☀️';
+                if (mobileButton) mobileButton.innerHTML = '☀️ Toggle Theme';
+            }
+
+            const mobileLinks = document.querySelectorAll('.mobile-nav-link');
+            mobileLinks.forEach(link => {
+                link.addEventListener('click', closeMobileMenu);
+        });
+
+            // Initialize simulation
+            initializeSimulation();
+        });
+
+        window.onload = function() {
+            initializeChart();
+            updateBufferDisplay();
+        };
+    </script>
+</body>
+</html> 

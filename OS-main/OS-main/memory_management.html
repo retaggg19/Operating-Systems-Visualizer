@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Management</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #f5f5f7;
+            --container-bg: white;
+            --text-color: #333;
+            --text-secondary: #666;
+            --card-bg: #f8f9fa;
+            --card-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            --border-color: #ddd;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --container-bg: #2d2d2d;
+            --text-color: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --card-bg: #3a3a3a;
+            --card-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            --border-color: #555;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .navbar {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background-size: 200% 200%;
+      padding: 20px 0;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-radius: 0 0 30px 30px;
+      margin-bottom: 20px;
+      animation: gradientShift 8s ease infinite, slideDown 0.8s ease-out;
+    }
+    
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
+    @keyframes slideDown {
+      from {
+        transform: translateY(-100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0 30px;
+      position: relative;
+      gap: 40px;
+      animation: fadeInUp 1s ease-out 0.3s both;
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .theme-toggle {
+        background: var(--container-bg);
+        border: 3px solid #2ecc71;
+        color: #2ecc71;
+        padding: 12px 20px;
+        border-radius: 30px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        font-size: 1.1em;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        min-width: 120px;
+        animation: bounceIn 1s ease-out 0.8s both, glow 2s ease-in-out infinite alternate;
+        position: relative;
+        overflow: hidden;
+        height: auto;
+        box-sizing: content-box;
+    }
+    
+    .theme-toggle::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(46, 204, 113, 0.3);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        transition: all 0.3s ease;
+    }
+    
+    .theme-toggle:hover {
+        background: #2ecc71;
+        color: white;
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 6px 12px rgba(46, 204, 113, 0.4);
+        animation-play-state: paused;
+    }
+    
+    .theme-toggle:hover::after {
+        width: 100%;
+        height: 100%;
+    }
+    
+    @keyframes bounceIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.3) translateX(50px);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.05) translateX(0);
+      }
+      70% {
+        transform: scale(0.9) translateX(0);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateX(0);
+      }
+    }
+    
+    @keyframes glow {
+      from {
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15), 0 0 0 rgba(46, 204, 113, 0.4);
+      }
+      to {
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15), 0 0 20px rgba(46, 204, 113, 0.6);
+      }
+    }
+    
+    .nav-brand {
+      color: white;
+      font-size: 1.8em;
+      font-weight: 800;
+      text-decoration: none;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      letter-spacing: -0.5px;
+      transition: all 0.3s ease;
+      animation: pulse 2s ease-in-out infinite alternate;
+    }
+    .nav-brand:hover {
+      transform: scale(1.05) rotate(2deg);
+      text-shadow: 0 4px 8px rgba(0,0,0,0.4);
+      animation-play-state: paused;
+    }
+    
+    @keyframes pulse {
+      from {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      }
+      to {
+        text-shadow: 0 4px 12px rgba(255,255,255,0.3);
+      }
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 15px;
+      background: rgba(255,255,255,0.1);
+      padding: 10px 15px;
+      border-radius: 30px;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    .nav-links:hover {
+      background: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-3px); }
+    }
+    
+    .nav-link {
+      color: white;
+      text-decoration: none;
+      padding: 12px 20px;
+      border-radius: 30px;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      position: relative;
+      overflow: hidden;
+      animation: slideInFromLeft 0.6s ease-out forwards;
+      opacity: 0;
+    }
+    
+    .nav-link:nth-child(1) { animation-delay: 0.1s; }
+    .nav-link:nth-child(2) { animation-delay: 0.2s; }
+    .nav-link:nth-child(3) { animation-delay: 0.3s; }
+    .nav-link:nth-child(4) { animation-delay: 0.4s; }
+    .nav-link:nth-child(5) { animation-delay: 0.5s; }
+    .nav-link:nth-child(6) { animation-delay: 0.6s; }
+    .nav-link:nth-child(7) { animation-delay: 0.7s; }
+    
+    @keyframes slideInFromLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    .nav-link::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    .nav-link:hover::before {
+      left: 100%;
+    }
+    .nav-link:hover {
+      background: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .nav-link.active {
+      background: rgba(255,255,255,0.3);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+        .container {
+            max-width: 1200px;
+            margin: 15px auto;
+            background: var(--container-bg);
+            padding: 15px;
+            border-radius: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 12px;
+            color: #2ecc71;
+            font-size: 1.5em;
+        }
+        .back-button {
+            position: relative;
+            display: inline-block;
+            background: #2ecc71;
+            color: white;
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            transition: background 0.3s ease;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+        .back-button:hover {
+            background: #27ae60;
+        }
+        .section {
+            margin-bottom: 15px;
+            padding: 12px;
+            background: var(--card-bg);
+            border-radius: 20px;
+            transition: background-color 0.3s ease;
+        }
+        .section h2 {
+            color: #2ecc71;
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 1.2em;
+        }
+        .input-group {
+            margin-bottom: 6px;
+        }
+        label {
+            display: block;
+            margin-bottom: 2px;
+            font-weight: bold;
+            font-size: 0.75em;
+        }
+        input, select {
+            width: 100%;
+            padding: 4px 8px;
+            border: 2px solid var(--border-color);
+            border-radius: 15px;
+            margin-bottom: 6px;
+            background: var(--container-bg);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            font-size: 0.75em;
+            font-weight: 500;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            height: 28px;
+            box-sizing: border-box;
+        }
+        
+        select {
+            appearance: none;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232ecc71' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 10px;
+            padding-right: 28px;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #2ecc71;
+            box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.1), 0 2px 8px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+        }
+        
+        input:hover, select:hover {
+            border-color: #2ecc71;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        button {
+            background: #2ecc71;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s ease, box-shadow 0.3s;
+            font-size: 0.75em;
+            height: 28px;
+            box-sizing: border-box;
+        }
+        button:hover {
+            background: #27ae60;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        .result {
+            margin-top: 10px;
+            padding: 8px;
+            background: var(--container-bg);
+            border-radius: 15px;
+            box-shadow: var(--card-shadow);
+            transition: background-color 0.3s ease;
+            font-size: 0.8em;
+        }
+        .memory-blocks-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1px;
+            margin: 6px 0;
+            max-width: 100%;
+            overflow-x: auto;
+            padding: 3px;
+        }
+        .memory-block {
+            display: inline-block;
+            padding: 4px;
+            margin: 1px;
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            text-align: center;
+            min-width: 30px;
+            transition: all 0.3s ease;
+            font-size: 0.7em;
+            flex-shrink: 0;
+        }
+        .memory-block.allocated {
+            background: #2ecc71;
+            color: white;
+        }
+        .free {
+            background: var(--card-bg);
+        }
+        .chart-container {
+            margin-top: 10px;
+            height: 180px;
+        }
+        .page-frames {
+            display: flex;
+            gap: 4px;
+            margin: 8px 0;
+            flex-wrap: wrap;
+            max-width: 100%;
+            overflow-x: auto;
+            padding: 5px;
+        }
+        .page-frame {
+            width: 30px;
+            height: 30px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 30px;
+            background: var(--container-bg);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            font-size: 0.75em;
+            flex-shrink: 0;
+            min-width: 30px;
+        }
+        .page-fault {
+            background: #e74c3c;
+            color: white;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .nav-button {
+            background: #2ecc71;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: bold;
+            transition: background 0.3s;
+            margin: 0 10px;
+        }
+        .nav-button:hover {
+            background: #27ae60;
+        }
+
+        /* Mobile Menu Toggle Button */
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-size: 1.3em;
+            cursor: pointer;
+            padding: 12px 15px;
+            border-radius: 50%;
+            z-index: 1001;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            width: 45px;
+            height: 45px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-menu-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+
+        /* Mobile Overlay */
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1002;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .mobile-overlay.show {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Mobile Sidebar */
+        .mobile-sidebar {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 280px;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 1003;
+            transition: left 0.3s ease;
+            overflow-y: auto;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+            border-radius: 0 50px 50px 0;
+        }
+
+        .mobile-sidebar.open {
+            left: 0;
+        }
+
+        .mobile-sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .mobile-sidebar-brand {
+            color: white;
+            font-size: 1.4em;
+            font-weight: 800;
+            text-decoration: none;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .mobile-close-btn {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-close-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+            transform: scale(1.05);
+        }
+
+        .mobile-nav-links {
+            padding: 20px 0;
+        }
+
+        .mobile-nav-link {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 15px 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+            margin: 2px 0;
+        }
+
+        .mobile-nav-link:hover,
+        .mobile-nav-link.active {
+            background: rgba(255,255,255,0.2);
+            border-left-color: white;
+            transform: translateX(5px);
+        }
+
+        .mobile-theme-toggle {
+            margin: 20px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            display: block;
+            width: calc(100% - 40px);
+        }
+
+        .mobile-theme-toggle:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+            transform: scale(1.02);
+        }
+
+        /* Mobile Responsive Design */
+        @media screen and (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: flex !important;
+            }
+
+            .navbar {
+                display: none;
+            }
+            
+            .container {
+                margin: 10px;
+                padding: 15px;
+                margin-top: 80px;
+            }
+            
+            h1 {
+                font-size: 1.5em;
+            }
+            
+            .section h2 {
+                font-size: 1.2em;
+            }
+            
+            input, select, button {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+            
+            .chart-container {
+                height: 200px;
+            }
+            
+            .page-frame {
+                width: 25px;
+                height: 25px;
+                font-size: 0.7em;
+                min-width: 25px;
+            }
+            
+            .memory-block {
+                padding: 4px;
+                min-width: 30px;
+                font-size: 0.75em;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .container {
+                margin: 5px;
+                padding: 10px;
+                margin-top: 80px;
+            }
+            
+            h1 {
+                font-size: 1.3em;
+                margin-bottom: 10px;
+            }
+            
+            .section {
+                padding: 10px;
+                margin-bottom: 15px;
+            }
+            
+            .section h2 {
+                font-size: 1.1em;
+                margin-bottom: 10px;
+            }
+            
+            label {
+                font-size: 0.85em;
+            }
+            
+            input, select {
+                padding: 6px 10px;
+                font-size: 11px;
+            }
+            
+            button {
+                padding: 6px 12px;
+                font-size: 0.85em;
+            }
+            
+            .chart-container {
+                height: 150px;
+            }
+            
+            .page-frames {
+                gap: 2px;
+                padding: 3px;
+            }
+            
+            .page-frame {
+                width: 22px;
+                height: 22px;
+                font-size: 0.65em;
+                min-width: 22px;
+            }
+            
+            .memory-blocks-container {
+                gap: 1px;
+                padding: 3px;
+            }
+            
+            .memory-block {
+                padding: 3px;
+                margin: 1px;
+                min-width: 25px;
+                font-size: 0.7em;
+            }
+            
+            .result {
+                padding: 8px;
+                font-size: 0.85em;
+            }
+
+            .mobile-sidebar {
+                width: 100%;
+                left: -100%;
+            }
+
+            .mobile-menu-toggle {
+                top: 15px;
+                left: 15px;
+                width: 45px;
+                height: 45px;
+                font-size: 1.3em;
+                border-radius: 35px;
+            }
+        }
+        
+        .fit-button {
+            background: var(--card-bg);
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+            padding: 4px 8px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-size: 0.75em;
+            height: 28px;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .fit-button:hover {
+            background: #2ecc71;
+            color: white;
+            border-color: #2ecc71;
+        }
+        
+        .fit-button.active {
+            background: #2ecc71;
+            color: white;
+            border-color: #2ecc71;
+        }
+        
+        .hole-input {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 6px;
+            padding: 6px;
+            background: var(--container-bg);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .process-input {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+            padding: 4px;
+            background: var(--container-bg);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .memory-visualization {
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 10px;
+            background: var(--container-bg);
+            min-height: 120px;
+        }
+        
+        .memory-segment {
+            display: inline-block;
+            padding: 3px 5px;
+            margin: 1px;
+            border-radius: 6px;
+            font-size: 0.7em;
+            text-align: center;
+            min-width: 25px;
+            border: 1px solid #ccc;
+        }
+        
+        .memory-hole {
+            background: #3498db;
+            color: white;
+        }
+        
+        .memory-allocated {
+            background: #2ecc71;
+            color: white;
+        }
+        
+        .memory-occupied {
+            background: #e74c3c;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+    
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" onclick="closeMobileMenu()"></div>
+    
+    <!-- Mobile Sidebar -->
+    <div class="mobile-sidebar" id="mobileSidebar">
+      <div class="mobile-sidebar-header">
+        <a href="index.html" class="mobile-sidebar-brand">OS Visualizer</a>
+        <button class="mobile-close-btn" onclick="closeMobileMenu()">×</button>
+      </div>
+      <div class="mobile-nav-links">
+        <a href="producer_consumer.html" class="mobile-nav-link">Producer-Consumer</a>
+        <a href="dining_philosophers.html" class="mobile-nav-link">Dining Philosophers</a>
+        <a href="readers_writers.html" class="mobile-nav-link">Readers-Writers</a>
+        <a href="bankers_algorithm.html" class="mobile-nav-link">Banker's Algorithm</a>
+        <a href="memory_management.html" class="mobile-nav-link active">Memory Management</a>
+        <a href="resource_allocation.html" class="mobile-nav-link">Resource Allocation</a>
+        <a href="Try _OS.html" class="mobile-nav-link">CPU Scheduling</a>
+      </div>
+      <button class="mobile-theme-toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+    </div>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-brand">OS Visualizer</a>
+            <div class="nav-links">
+                <a href="producer_consumer.html" class="nav-link">Producer-Consumer</a>
+                <a href="dining_philosophers.html" class="nav-link">Dining Philosophers</a>
+                <a href="readers_writers.html" class="nav-link">Readers-Writers</a>
+                <a href="bankers_algorithm.html" class="nav-link">Banker's Algorithm</a>
+                <a href="memory_management.html" class="nav-link active">Memory Management</a>
+                <a href="resource_allocation.html" class="nav-link">Resource Allocation</a>
+                <a href="Try _OS.html" class="nav-link">CPU Scheduling</a>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Memory Management</h1>
+
+        <div class="section">
+            <h2>Memory Partition Allocation</h2>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #2ecc71;">Memory Partitions (KB):</label>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin-bottom: 10px;">
+                    <input type="number" id="partition0" min="1" placeholder="Partition 1">
+                    <input type="number" id="partition1" min="1" placeholder="Partition 2">
+                    <input type="number" id="partition2" min="1" placeholder="Partition 3">
+                    <input type="number" id="partition3" min="1" placeholder="Partition 4">
+                    <input type="number" id="partition4" min="1" placeholder="Partition 5">
+                </div>
+                <button onclick="addPartition()" style="background: #3498db; margin-right: 5px;">Add Partition</button>
+                <button onclick="removePartition()" style="background: #e74c3c;">Remove Partition</button>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #2ecc71;">Processes (KB):</label>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin-bottom: 10px;" id="processesGrid">
+                    <input type="number" id="process0" min="1" placeholder="Process 1">
+                    <input type="number" id="process1" min="1" placeholder="Process 2">
+                    <input type="number" id="process2" min="1" placeholder="Process 3">
+                    <input type="number" id="process3" min="1" placeholder="Process 4">
+                </div>
+                <button onclick="addProcess()" style="background: #3498db; margin-right: 5px;">Add Process</button>
+                <button onclick="removeProcess()" style="background: #e74c3c;">Remove Process</button>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
+                <button onclick="runAllocation('first')" id="firstFitBtn" class="fit-button active">First Fit</button>
+                <button onclick="runAllocation('best')" id="bestFitBtn" class="fit-button">Best Fit</button>
+                <button onclick="runAllocation('worst')" id="worstFitBtn" class="fit-button">Worst Fit</button>
+            </div>
+            
+            <button onclick="compareAllAlgorithms()" style="width: 100%; padding: 8px; font-size: 0.9em; margin-bottom: 15px; background: #3498db; color: white;">Compare All Algorithms</button>
+            
+            <div id="partitionVisualization" style="margin-top: 15px;">
+                <!-- Partition visualization will be displayed here -->
+            </div>
+            
+            <div class="result" id="partitionResult"></div>
+        </div>
+
+        <div class="section">
+            <h2>Page Replacement</h2>
+            <div class="input-group">
+                <label>Reference String (comma-separated)</label>
+                <input type="text" id="referenceString" placeholder="e.g., 1,2,3,4,1,2,5,1,2,3,4,5">
+            </div>
+            <div class="input-group">
+                <label>Number of Frames</label>
+                <input type="number" id="frameCount" value="3" min="1" max="10">
+            </div>
+            <div class="input-group">
+                <label>Page Replacement Algorithm</label>
+                <select id="replacementAlgorithm">
+                    <option value="fifo">FIFO</option>
+                    <option value="optimal">Optimal</option>
+                    <option value="lru">LRU</option>
+                </select>
+            </div>
+            <button onclick="simulatePageReplacement()">Simulate Page Replacement</button>
+            <div class="result" id="replacementResult"></div>
+            <div class="chart-container">
+                <canvas id="replacementChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allocationChart = null;
+        let replacementChart = null;
+
+        // Input validation function
+        function validateInput(input) {
+            // Remove any non-numeric characters except decimal point
+            input.value = input.value.replace(/[^0-9.]/g, '');
+            
+            // Ensure only one decimal point
+            const parts = input.value.split('.');
+            if (parts.length > 2) {
+                input.value = parts[0] + '.' + parts.slice(1).join('');
+            }
+            
+            // Convert to number and check if negative
+            const num = parseFloat(input.value);
+            if (num < 0) {
+                input.value = 0;
+            }
+            
+            // Ensure minimum value of 1 for certain fields
+            if (input.id === 'totalMemory' || input.id === 'frameCount') {
+                if (num < 1) {
+                    input.value = 1;
+                }
+            }
+        }
+
+        // Add input validation to all number inputs
+        document.addEventListener('DOMContentLoaded', function() {
+            const numberInputs = document.querySelectorAll('input[type="number"]');
+            numberInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    validateInput(this);
+                });
+                input.addEventListener('blur', function() {
+                    validateInput(this);
+                });
+            });
+        });
+
+        // Memory Partition Allocation Functions
+        let partitionCount = 5;
+        let processCount = 4;
+
+        function getMemoryPartitions() {
+            let partitions = [];
+            for (let i = 0; i < partitionCount; i++) {
+                const element = document.getElementById(`partition${i}`);
+                if (element) {
+                    const value = parseInt(element.value) || 0;
+                    if (value > 0) partitions.push(value);
+                }
+            }
+            return partitions;
+        }
+
+        function getProcesses() {
+            let processes = [];
+            for (let i = 0; i < processCount; i++) {
+                const element = document.getElementById(`process${i}`);
+                if (element) {
+                    const value = parseInt(element.value) || 0;
+                    if (value > 0) processes.push(value);
+                }
+            }
+            return processes;
+        }
+
+        function addPartition() {
+            const partitionsGrid = document.querySelector('div[style*="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr))"]');
+            const newInput = document.createElement('input');
+            newInput.type = 'number';
+            newInput.id = `partition${partitionCount}`;
+            newInput.min = '1';
+            newInput.placeholder = `Partition ${partitionCount + 1}`;
+            newInput.style.cssText = 'width: 100%; padding: 4px 8px; border: 2px solid var(--border-color); border-radius: 15px; margin-bottom: 6px; background: var(--container-bg); color: var(--text-color); transition: all 0.3s ease; font-size: 0.75em; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.05); height: 28px; box-sizing: border-box;';
+            
+            partitionsGrid.appendChild(newInput);
+            partitionCount++;
+        }
+
+        function removePartition() {
+            if (partitionCount > 1) {
+                partitionCount--;
+                const element = document.getElementById(`partition${partitionCount}`);
+                if (element) {
+                    element.remove();
+                }
+            }
+        }
+
+        function addProcess() {
+            const processesGrid = document.getElementById('processesGrid');
+            const newInput = document.createElement('input');
+            newInput.type = 'number';
+            newInput.id = `process${processCount}`;
+            newInput.min = '1';
+            newInput.placeholder = `Process ${processCount + 1}`;
+            newInput.style.cssText = 'width: 100%; padding: 4px 8px; border: 2px solid var(--border-color); border-radius: 15px; margin-bottom: 6px; background: var(--container-bg); color: var(--text-color); transition: all 0.3s ease; font-size: 0.75em; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.05); height: 28px; box-sizing: border-box;';
+            
+            processesGrid.appendChild(newInput);
+            processCount++;
+        }
+
+        function removeProcess() {
+            if (processCount > 1) {
+                processCount--;
+                const element = document.getElementById(`process${processCount}`);
+                if (element) {
+                    element.remove();
+                }
+            }
+        }
+
+        function runAllocation(algorithm) {
+            // Reset button states
+            document.querySelectorAll('.fit-button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(algorithm + 'FitBtn').classList.add('active');
+            
+            // Get current values from inputs
+            const memoryPartitions = getMemoryPartitions();
+            const processes = getProcesses();
+            
+            if (memoryPartitions.length === 0 || processes.length === 0) {
+                document.getElementById('partitionResult').innerHTML = '<p style="color: #e74c3c;">Please enter at least one memory partition and one process.</p>';
+                return;
+            }
+            
+            // Create a copy of partitions for this allocation
+            let partitions = [...memoryPartitions];
+            let allocations = [];
+            let totalWastedMemory = 0;
+            
+            for (let i = 0; i < processes.length; i++) {
+                let processSize = processes[i];
+                let allocatedPartition = -1;
+                
+                switch (algorithm) {
+                    case 'first':
+                        allocatedPartition = firstFitAllocation(partitions, processSize);
+                        break;
+                    case 'best':
+                        allocatedPartition = bestFitAllocation(partitions, processSize);
+                        break;
+                    case 'worst':
+                        allocatedPartition = worstFitAllocation(partitions, processSize);
+                        break;
+                }
+                
+                if (allocatedPartition !== -1) {
+                    let wastedSpace = partitions[allocatedPartition] - processSize;
+                    totalWastedMemory += wastedSpace;
+                    
+                    allocations.push({
+                        processId: i + 1,
+                        processSize: processSize,
+                        partitionIndex: allocatedPartition,
+                        originalPartitionSize: memoryPartitions[allocatedPartition],
+                        wastedSpace: wastedSpace,
+                        allocated: true
+                    });
+                    
+                    // Mark partition as used (set to 0)
+                    partitions[allocatedPartition] = 0;
+                } else {
+                    allocations.push({
+                        processId: i + 1,
+                        processSize: processSize,
+                        partitionIndex: -1,
+                        originalPartitionSize: 0,
+                        wastedSpace: 0,
+                        allocated: false
+                    });
+                }
+            }
+            
+            displayPartitionResults(allocations, algorithm, totalWastedMemory, memoryPartitions, processes);
+            visualizePartitions(allocations, algorithm, memoryPartitions);
+        }
+
+        function firstFitAllocation(partitions, processSize) {
+            for (let i = 0; i < partitions.length; i++) {
+                if (partitions[i] >= processSize) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        function bestFitAllocation(partitions, processSize) {
+            let bestFit = -1;
+            let minWaste = Infinity;
+            
+            for (let i = 0; i < partitions.length; i++) {
+                if (partitions[i] >= processSize) {
+                    let waste = partitions[i] - processSize;
+                    if (waste < minWaste) {
+                        minWaste = waste;
+                        bestFit = i;
+                    }
+                }
+            }
+            return bestFit;
+        }
+
+        function worstFitAllocation(partitions, processSize) {
+            let worstFit = -1;
+            let maxWaste = -1;
+            
+            for (let i = 0; i < partitions.length; i++) {
+                if (partitions[i] >= processSize) {
+                    let waste = partitions[i] - processSize;
+                    if (waste > maxWaste) {
+                        maxWaste = waste;
+                        worstFit = i;
+                    }
+                }
+            }
+            return worstFit;
+        }
+
+        function displayPartitionResults(allocations, algorithm, totalWastedMemory, memoryPartitions, processes) {
+            const resultDiv = document.getElementById('partitionResult');
+            let html = `<h3 style="margin-top: 0; margin-bottom: 10px;">${algorithm.charAt(0).toUpperCase() + algorithm.slice(1)} Fit Results:</h3>`;
+            
+            let totalAllocated = 0;
+            let unallocatedProcesses = [];
+            
+            allocations.forEach(allocation => {
+                if (allocation.allocated) {
+                    totalAllocated++;
+                    html += `<p style="margin: 5px 0; color: #2ecc71;">
+                        Process ${allocation.processId} (${allocation.processSize}K) → Partition ${allocation.partitionIndex + 1} (${allocation.originalPartitionSize}K)
+                        <span style="color: #e67e22; font-size: 0.9em;"> | Wasted: ${allocation.wastedSpace}K</span>
+                    </p>`;
+                } else {
+                    unallocatedProcesses.push(allocation);
+                    html += `<p style="margin: 5px 0; color: #e74c3c;">
+                        Process ${allocation.processId} (${allocation.processSize}K) → Not Allocated
+                    </p>`;
+                }
+            });
+            
+            const totalMemory = memoryPartitions.reduce((a, b) => a + b, 0);
+            html += `<div style="margin-top: 15px; padding: 10px; background: var(--card-bg); border-radius: 8px; border-left: 4px solid #3498db;">`;
+            html += `<strong>Summary:</strong><br>`;
+            html += `Processes Allocated: ${totalAllocated}/${processes.length}<br>`;
+            html += `Total Wasted Memory: ${totalWastedMemory}K<br>`;
+            html += `Memory Efficiency: ${totalMemory > 0 ? ((1 - totalWastedMemory / totalMemory) * 100).toFixed(2) : 0}%`;
+            html += `</div>`;
+            
+            resultDiv.innerHTML = html;
+        }
+
+        function visualizePartitions(allocations, algorithm, memoryPartitions) {
+            const visualizationDiv = document.getElementById('partitionVisualization');
+            let html = `<h3 style="margin-top: 0; margin-bottom: 10px; font-size: 1em;">Memory Partition Layout - ${algorithm.charAt(0).toUpperCase() + algorithm.slice(1)} Fit:</h3>`;
+            
+            html += '<div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">';
+            
+            // Create partition blocks
+            for (let i = 0; i < memoryPartitions.length; i++) {
+                let partitionSize = memoryPartitions[i];
+                let allocation = allocations.find(a => a.partitionIndex === i);
+                
+                html += `<div style="border: 2px solid var(--border-color); border-radius: 8px; padding: 8px; background: var(--container-bg); min-width: 80px; text-align: center;">`;
+                html += `<div style="font-weight: bold; margin-bottom: 5px;">Partition ${i + 1}</div>`;
+                html += `<div style="font-size: 0.9em; margin-bottom: 5px;">${partitionSize}K</div>`;
+                
+                if (allocation && allocation.allocated) {
+                    html += `<div style="background: #2ecc71; color: white; padding: 4px; border-radius: 4px; margin: 2px 0; font-size: 0.8em;">`;
+                    html += `Process ${allocation.processId}<br>${allocation.processSize}K`;
+                    html += `</div>`;
+                    
+                    if (allocation.wastedSpace > 0) {
+                        html += `<div style="background: #e67e22; color: white; padding: 2px; border-radius: 4px; font-size: 0.7em;">`;
+                        html += `Wasted: ${allocation.wastedSpace}K`;
+                        html += `</div>`;
+                    }
+                } else {
+                    html += `<div style="background: #95a5a6; color: white; padding: 4px; border-radius: 4px; font-size: 0.8em;">`;
+                    html += `Free`;
+                    html += `</div>`;
+                }
+                
+                html += `</div>`;
+            }
+            
+            html += '</div>';
+            visualizationDiv.innerHTML = html;
+        }
+
+        function compareAllAlgorithms() {
+            // Get current values from inputs
+            const memoryPartitions = getMemoryPartitions();
+            const processes = getProcesses();
+            
+            if (memoryPartitions.length === 0 || processes.length === 0) {
+                document.getElementById('partitionResult').innerHTML = '<p style="color: #e74c3c;">Please enter at least one memory partition and one process.</p>';
+                return;
+            }
+            
+            const algorithms = ['first', 'best', 'worst'];
+            let comparisonResults = [];
+            
+            algorithms.forEach(algorithm => {
+                let partitions = [...memoryPartitions];
+                let totalWastedMemory = 0;
+                let allocatedCount = 0;
+                
+                for (let i = 0; i < processes.length; i++) {
+                    let processSize = processes[i];
+                    let allocatedPartition = -1;
+                    
+                    switch (algorithm) {
+                        case 'first':
+                            allocatedPartition = firstFitAllocation(partitions, processSize);
+                            break;
+                        case 'best':
+                            allocatedPartition = bestFitAllocation(partitions, processSize);
+                            break;
+                        case 'worst':
+                            allocatedPartition = worstFitAllocation(partitions, processSize);
+                            break;
+                    }
+                    
+                    if (allocatedPartition !== -1) {
+                        let wastedSpace = partitions[allocatedPartition] - processSize;
+                        totalWastedMemory += wastedSpace;
+                        allocatedCount++;
+                        partitions[allocatedPartition] = 0;
+                    }
+                }
+                
+                const totalMemory = memoryPartitions.reduce((a, b) => a + b, 0);
+                comparisonResults.push({
+                    algorithm: algorithm,
+                    allocatedCount: allocatedCount,
+                    totalWastedMemory: totalWastedMemory,
+                    efficiency: totalMemory > 0 ? ((1 - totalWastedMemory / totalMemory) * 100).toFixed(2) : 0
+                });
+            });
+            
+            displayComparison(comparisonResults, processes);
+        }
+
+        function displayComparison(results, processes) {
+            const resultDiv = document.getElementById('partitionResult');
+            let html = `<h3 style="margin-top: 0; margin-bottom: 15px;">Algorithm Comparison:</h3>`;
+            
+            html += `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">`;
+            
+            results.forEach(result => {
+                let borderColor = '#3498db';
+                if (result.algorithm === 'best') borderColor = '#2ecc71';
+                else if (result.algorithm === 'worst') borderColor = '#e74c3c';
+                
+                html += `<div style="border: 2px solid ${borderColor}; border-radius: 10px; padding: 15px; background: var(--card-bg);">`;
+                html += `<h4 style="margin: 0 0 10px 0; color: ${borderColor}; text-transform: capitalize;">${result.algorithm} Fit</h4>`;
+                html += `<p style="margin: 3px 0; font-size: 0.9em;">Allocated: ${result.allocatedCount}/${processes.length}</p>`;
+                html += `<p style="margin: 3px 0; font-size: 0.9em;">Wasted: ${result.totalWastedMemory}K</p>`;
+                html += `<p style="margin: 3px 0; font-size: 0.9em; font-weight: bold;">Efficiency: ${result.efficiency}%</p>`;
+                html += `</div>`;
+            });
+            
+            html += `</div>`;
+            
+            // Find the most efficient algorithm
+            let mostEfficient = results.reduce((prev, current) => 
+                parseFloat(current.efficiency) > parseFloat(prev.efficiency) ? current : prev
+            );
+            
+            html += `<div style="padding: 15px; background: #2ecc71; color: white; border-radius: 10px; text-align: center;">`;
+            html += `<h4 style="margin: 0 0 10px 0;">Most Efficient Algorithm:</h4>`;
+            html += `<p style="margin: 0; font-size: 1.1em; font-weight: bold; text-transform: capitalize;">${mostEfficient.algorithm} Fit (${mostEfficient.efficiency}% efficiency)</p>`;
+            html += `</div>`;
+            
+            resultDiv.innerHTML = html;
+            
+            // Clear visualization
+            document.getElementById('partitionVisualization').innerHTML = '';
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            runAllocation('first');
+        });
+
+        // Page Replacement Functions
+        function simulatePageReplacement() {
+            const referenceString = document.getElementById('referenceString').value.split(',').map(Number);
+            const frameCount = parseInt(document.getElementById('frameCount').value);
+            const algorithm = document.getElementById('replacementAlgorithm').value;
+
+            // Validate reference string
+            if (referenceString.some(page => isNaN(page) || page < 0)) {
+                alert('Please enter valid page numbers (non-negative integers)');
+                return;
+            }
+
+            let steps = [];
+            let pageFaults = 0;
+            let pageHits = 0;
+
+            if (algorithm === 'fifo') {
+                let frames = new Array(frameCount).fill(-1); // Initialize with empty frames
+                let nextFrameIndex = 0; // Index for next frame to replace
+                
+                for (let i = 0; i < referenceString.length; i++) {
+                    let page = referenceString[i];
+                    let pageIndex = frames.indexOf(page);
+                    
+                    if (pageIndex !== -1) {
+                        // Page hit - page is already in frames
+                        pageHits++;
+                        steps.push({ 
+                            page, 
+                            frames: [...frames], 
+                            fault: false,
+                            replacedFrame: -1,
+                            step: i + 1
+                        });
+                    } else {
+                        // Page fault - page is not in frames
+                        pageFaults++;
+                        let replacedFrame = frames[nextFrameIndex];
+                        
+                        // Place the page in the next available frame position
+                        frames[nextFrameIndex] = page;
+                        
+                        steps.push({ 
+                            page, 
+                            frames: [...frames], 
+                            fault: true,
+                            replacedFrame: replacedFrame === -1 ? 'none' : replacedFrame,
+                            step: i + 1
+                        });
+                        
+                        // Move to next frame position (circular)
+                        nextFrameIndex = (nextFrameIndex + 1) % frameCount;
+                    }
+                }
+            } else if (algorithm === 'optimal') {
+                let frames = new Array(frameCount).fill(-1);
+                
+                for (let i = 0; i < referenceString.length; i++) {
+                    let page = referenceString[i];
+                    let pageIndex = frames.indexOf(page);
+                    
+                    if (pageIndex !== -1) {
+                        pageHits++;
+                        steps.push({ 
+                            page, 
+                            frames: [...frames], 
+                            fault: false,
+                            step: i + 1
+                        });
+                    } else {
+                        pageFaults++;
+                        
+                        // Find empty frame first
+                        let emptyIndex = frames.indexOf(-1);
+                        if (emptyIndex !== -1) {
+                            frames[emptyIndex] = page;
+                        } else {
+                            // Find the page to replace using optimal algorithm
+                            let farthest = -1, replaceIndex = 0;
+                            
+                            for (let j = 0; j < frameCount; j++) {
+                                let nextUse = -1;
+                                
+                                // Find next occurrence of this frame's page
+                                for (let k = i + 1; k < referenceString.length; k++) {
+                                    if (referenceString[k] === frames[j]) {
+                                        nextUse = k;
+                                        break;
+                                    }
+                                }
+                                
+                                // If page is never used again, replace it immediately
+                                if (nextUse === -1) {
+                                    replaceIndex = j;
+                                    break;
+                                }
+                                
+                                // Otherwise, find the page used farthest in the future
+                                if (nextUse > farthest) {
+                                    farthest = nextUse;
+                                    replaceIndex = j;
+                                }
+                            }
+                            
+                            frames[replaceIndex] = page;
+                        }
+                        
+                        steps.push({ 
+                            page, 
+                            frames: [...frames], 
+                            fault: true,
+                            step: i + 1
+                        });
+                    }
+                }
+            } else if (algorithm === 'lru') {
+                let frames = new Array(frameCount).fill(-1);
+                let lastUsed = new Array(frameCount).fill(-1);
+                
+                for (let i = 0; i < referenceString.length; i++) {
+                    let page = referenceString[i];
+                    let pageIndex = frames.indexOf(page);
+                    
+                    if (pageIndex !== -1) {
+                        pageHits++;
+                        lastUsed[pageIndex] = i; // Update last used time
+                        steps.push({ 
+                            page, 
+                            frames: [...frames], 
+                            fault: false,
+                            step: i + 1
+                        });
+                    } else {
+                        pageFaults++;
+                        
+                        // Find empty frame first
+                        let emptyIndex = frames.indexOf(-1);
+                        if (emptyIndex !== -1) {
+                            frames[emptyIndex] = page;
+                            lastUsed[emptyIndex] = i;
+                        } else {
+                            // Find least recently used frame
+                            let lruIndex = 0;
+                            for (let j = 1; j < frameCount; j++) {
+                                if (lastUsed[j] < lastUsed[lruIndex]) {
+                                    lruIndex = j;
+                                }
+                            }
+                            
+                            frames[lruIndex] = page;
+                            lastUsed[lruIndex] = i;
+                        }
+                        
+                        steps.push({ 
+                            page, 
+                            frames: [...frames], 
+                            fault: true,
+                            step: i + 1
+                        });
+                    }
+                }
+            }
+            
+            displayResults(steps, pageFaults, pageHits, algorithm);
+            updateReplacementChart(pageFaults, pageHits);
+        }
+
+        function displayResults(steps, pageFaults, pageHits, algorithm) {
+            const result = document.getElementById('replacementResult');
+            let html = `<h3 style="margin-top: 0; margin-bottom: 10px; font-size: 1.1em;">Page Replacement Result (${algorithm.toUpperCase()}):</h3>`;
+            html += `<p style="margin: 5px 0; font-size: 0.9em; color: #e74c3c;">Total Page Faults: ${pageFaults}</p>`;
+            html += `<p style="margin: 5px 0; font-size: 0.9em; color: #2ecc71;">Total Page Hits: ${pageHits}</p>`;
+            html += `<p style="margin: 5px 0; font-size: 0.9em; color: #3498db;">Hit Ratio: ${((pageHits / (pageFaults + pageHits)) * 100).toFixed(2)}%</p>`;
+            
+            // Show step-by-step process
+            html += `<div style="margin: 10px 0;"><strong>Step-by-step Process:</strong></div>`;
+            html += `<div style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 5px; background: var(--card-bg);">`;
+            
+            // Show all steps without limitation
+            for (let i = 0; i < steps.length; i++) {
+                const step = steps[i];
+                const frameDisplay = step.frames.map(frame => frame === -1 ? '□' : frame).join(' | ');
+                const statusColor = step.fault ? '#e74c3c' : '#2ecc71';
+                const statusText = step.fault ? 'FAULT' : 'HIT';
+                
+                html += `<div style="margin: 3px 0; padding: 3px; font-size: 0.8em; border-left: 3px solid ${statusColor}; padding-left: 6px;">`;
+                html += `Step ${step.step}: Page ${step.page} → [${frameDisplay}] - <span style="color: ${statusColor}; font-weight: bold;">${statusText}</span>`;
+                
+                if (step.fault && algorithm === 'fifo' && step.replacedFrame !== 'none') {
+                    html += ` (Replaced: ${step.replacedFrame})`;
+                }
+                
+                html += `</div>`;
+            }
+            
+            html += `</div>`;
+            
+            // Show final frame state
+            if (steps.length > 0) {
+                const finalFrames = steps[steps.length - 1].frames;
+                const finalDisplay = finalFrames.map(frame => frame === -1 ? 'Empty' : `Page ${frame}`).join(' | ');
+                html += `<div style="margin-top: 10px; padding: 8px; background: var(--container-bg); border-radius: 8px; border: 1px solid var(--border-color);">`;
+                html += `<strong>Final Frame State:</strong> [${finalDisplay}]`;
+                html += `</div>`;
+            }
+            
+            result.innerHTML = html;
+        }
+
+        function updateReplacementChart(pageFaults, pageHits) {
+            const ctx = document.getElementById('replacementChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (replacementChart) {
+                replacementChart.destroy();
+            }
+            
+            replacementChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Page Faults', 'Page Hits'],
+                    datasets: [{
+                        data: [pageFaults, pageHits],
+                        backgroundColor: ['#e74c3c', '#3498db']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Page Replacement Analysis'
+                        }
+                    }
+                }
+            });
+        }
+        // Mobile menu functions
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('mobileSidebar');
+            const overlay = document.querySelector('.mobile-overlay');
+            
+            console.log('Toggle mobile menu clicked'); // Debug log
+            sidebar.classList.add('open');
+            overlay.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('mobileSidebar');
+            const overlay = document.querySelector('.mobile-overlay');
+            
+            sidebar.classList.remove('open');
+            overlay.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        // Theme toggle functionality
+        function toggleTheme() {
+            const body = document.body;
+            const button = document.querySelector('.theme-toggle');
+            const mobileButton = document.querySelector('.mobile-theme-toggle');
+            
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+                if (button) button.innerHTML = '🌙';
+                if (mobileButton) mobileButton.innerHTML = '🌙 Toggle Theme';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                if (button) button.innerHTML = '☀️';
+                if (mobileButton) mobileButton.innerHTML = '☀️ Toggle Theme';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Load saved theme on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme');
+            const button = document.querySelector('.theme-toggle');
+            const mobileButton = document.querySelector('.mobile-theme-toggle');
+            
+            if (savedTheme === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+                if (button) button.innerHTML = '☀️';
+                if (mobileButton) mobileButton.innerHTML = '☀️ Toggle Theme';
+            }
+
+            // Close mobile menu when clicking on a link
+            const mobileLinks = document.querySelectorAll('.mobile-nav-link');
+            mobileLinks.forEach(link => {
+                link.addEventListener('click', closeMobileMenu);
+            });
+        });
+    </script>
+</body>
+</html> 

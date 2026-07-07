@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CPU Scheduling Visualizer</title>
+  <style>
+    :root {
+      --bg-color: #f5f5f7;
+      --container-bg: white;
+      --text-color: #333;
+      --text-secondary: #666;
+      --card-bg: #f9f9f9;
+      --card-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      --border-color: #ddd;
+    }
+
+    [data-theme="dark"] {
+      --bg-color: #1a1a1a;
+      --container-bg: #2d2d2d;
+      --text-color: #e0e0e0;
+      --text-secondary: #b0b0b0;
+      --card-bg: #3a3a3a;
+      --card-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      --border-color: #555;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-color);
+      margin: 0;
+      padding: 0;
+      color: var(--text-color);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .navbar {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background-size: 200% 200%;
+      padding: 20px 0;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-radius: 0 0 30px 30px;
+      margin-bottom: 20px;
+      animation: gradientShift 8s ease infinite, slideDown 0.8s ease-out;
+    }
+    
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
+    @keyframes slideDown {
+      from {
+        transform: translateY(-100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0 30px;
+      position: relative;
+      gap: 40px;
+      animation: fadeInUp 1s ease-out 0.3s both;
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .theme-toggle {
+      background: var(--container-bg);
+      border: 3px solid #3498db;
+      color: #3498db;
+      padding: 12px 20px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      font-size: 1.1em;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+      min-width: 120px;
+      animation: bounceIn 1s ease-out 0.8s both, glow 2s ease-in-out infinite alternate;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .theme-toggle::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(52, 152, 219, 0.3);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: all 0.3s ease;
+    }
+    
+    .theme-toggle:hover {
+      background: #3498db;
+      color: white;
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 6px 12px rgba(52, 152, 219, 0.4);
+      animation-play-state: paused;
+    }
+    
+    .theme-toggle:hover::after {
+      width: 100%;
+      height: 100%;
+    }
+    
+    @keyframes bounceIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.3) translateX(50px);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.05) translateX(0);
+      }
+      70% {
+        transform: scale(0.9) translateX(0);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateX(0);
+      }
+    }
+    
+    @keyframes glow {
+      from {
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15), 0 0 0 rgba(52, 152, 219, 0.4);
+      }
+      to {
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15), 0 0 20px rgba(52, 152, 219, 0.6);
+      }
+    }
+    
+    .nav-brand {
+      color: white;
+      font-size: 1.8em;
+      font-weight: 800;
+      text-decoration: none;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      letter-spacing: -0.5px;
+      transition: all 0.3s ease;
+      animation: pulse 2s ease-in-out infinite alternate;
+    }
+    .nav-brand:hover {
+      transform: scale(1.05) rotate(2deg);
+      text-shadow: 0 4px 8px rgba(0,0,0,0.4);
+      animation-play-state: paused;
+    }
+    
+    @keyframes pulse {
+      from {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      }
+      to {
+        text-shadow: 0 4px 12px rgba(255,255,255,0.3);
+      }
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 15px;
+      background: rgba(255,255,255,0.1);
+      padding: 10px 15px;
+      border-radius: 30px;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    .nav-links:hover {
+      background: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-3px); }
+    }
+    
+    .nav-link {
+      color: white;
+      text-decoration: none;
+      padding: 12px 20px;
+      border-radius: 30px;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      position: relative;
+      overflow: hidden;
+      animation: slideInFromLeft 0.6s ease-out forwards;
+      opacity: 0;
+    }
+    
+    .nav-link:nth-child(1) { animation-delay: 0.1s; }
+    .nav-link:nth-child(2) { animation-delay: 0.2s; }
+    .nav-link:nth-child(3) { animation-delay: 0.3s; }
+    .nav-link:nth-child(4) { animation-delay: 0.4s; }
+    .nav-link:nth-child(5) { animation-delay: 0.5s; }
+    .nav-link:nth-child(6) { animation-delay: 0.6s; }
+    .nav-link:nth-child(7) { animation-delay: 0.7s; }
+    
+    @keyframes slideInFromLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    .nav-link::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    .nav-link:hover::before {
+      left: 100%;
+    }
+    .nav-link:hover {
+      background: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .nav-link.active {
+      background: rgba(255,255,255,0.3);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    /* Mobile Menu Toggle Button */
+            .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 12px 15px;
+            border-radius: 50px;
+            z-index: 1001;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            width: 50px;
+            height: 50px;
+            align-items: center;
+            justify-content: center;
+        }
+
+    .mobile-menu-toggle:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    }
+
+    /* Mobile Overlay */
+    .mobile-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1002;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .mobile-overlay.show {
+      display: block;
+      opacity: 1;
+    }
+
+    /* Mobile Sidebar */
+            .mobile-sidebar {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 280px;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 1003;
+            transition: left 0.3s ease;
+            overflow-y: auto;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+            border-radius: 0 50px 50px 0;
+        }
+
+        .mobile-sidebar.open {
+            left: 0;
+        }
+
+    .mobile-sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .mobile-sidebar-brand {
+      color: white;
+      font-size: 1.4em;
+      font-weight: 800;
+      text-decoration: none;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .mobile-close-btn {
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,255,255,0.3);
+      color: white;
+      font-size: 1.5em;
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: 25px;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mobile-close-btn:hover {
+      background: rgba(255,255,255,0.2);
+      border-color: rgba(255,255,255,0.5);
+      transform: scale(1.05);
+    }
+
+    .mobile-nav-links {
+      padding: 20px 0;
+    }
+
+    .mobile-nav-link {
+      display: block;
+      color: white;
+      text-decoration: none;
+      padding: 15px 20px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      border-left: 3px solid transparent;
+      margin: 2px 0;
+    }
+
+    .mobile-nav-link:hover,
+    .mobile-nav-link.active {
+      background: rgba(255,255,255,0.2);
+      border-left-color: white;
+      transform: translateX(5px);
+    }
+
+    .mobile-theme-toggle {
+      margin: 20px;
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 40px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      display: block;
+      width: calc(100% - 40px);
+    }
+
+    .mobile-theme-toggle:hover {
+      background: rgba(255,255,255,0.2);
+      border-color: rgba(255,255,255,0.5);
+      transform: scale(1.02);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 20px auto;
+      background: var(--container-bg);
+      padding: 20px;
+      border-radius: 30px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.3s ease;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 15px;
+      color: #3498db;
+      font-size: 1.8em;
+    }
+    input, select, button {
+      padding: 10px 16px;
+      margin: 4px 0;
+      width: 100%;
+      border: 2px solid var(--border-color);
+      border-radius: 30px;
+      box-sizing: border-box;
+      background: var(--container-bg);
+      color: var(--text-color);
+      transition: all 0.3s ease;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    select {
+      appearance: none;
+      cursor: pointer;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233498db' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 15px center;
+      background-size: 16px;
+      padding-right: 45px;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: #3498db;
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1), 0 4px 12px rgba(0,0,0,0.1);
+      transform: translateY(-1px);
+    }
+    
+    input:hover, select:hover {
+      border-color: #3498db;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    button {
+      background: #3498db;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #2980b9;
+    }
+    .process-inputs {
+      margin-top: 15px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .process-card {
+      border: 1px solid var(--border-color);
+      padding: 8px;
+      border-radius: 30px;
+      background: var(--card-bg);
+      transition: background-color 0.3s ease;
+    }
+    /* Gantt chart styles */
+    .gantt-container {
+      overflow-x: auto;
+      margin-top: 20px;
+      padding-bottom: 15px;
+    }
+    .gantt-chart {
+      position: relative;
+      height: 50px;
+      margin-bottom: 30px;
+    }
+    .gantt-block {
+      position: absolute;
+      height: 50px;
+      background-color: #3498db;
+      border-radius: 30px;
+      color: white;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      font-size: 0.9em;
+    }
+    .time-label {
+      position: absolute;
+      top: 55px;
+      transform: translateX(-50%);
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+    .time-line {
+      position: absolute;
+      top: 50px;
+      width: 1px;
+      height: 5px;
+      background-color: var(--text-secondary);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      box-shadow: var(--card-shadow);
+      background: var(--container-bg);
+      border-radius: 30px;
+      overflow: hidden;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    th, td {
+      padding: 8px;
+      text-align: center;
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      transition: background-color 0.3s ease, color 0.3s ease;
+      font-size: 0.9em;
+    }
+    th {
+      background-color: #3498db;
+      color: white;
+      font-weight: bold;
+    }
+    tr:nth-child(even) {
+      background-color: var(--card-bg);
+    }
+    tr:hover {
+      background-color: var(--card-bg);
+      opacity: 0.8;
+    }
+    tfoot td {
+      font-weight: bold;
+      background-color: var(--card-bg);
+      color: var(--text-color);
+      border-top: 2px solid #3498db;
+    }
+    .results {
+      margin-top: 20px;
+    }
+    .back-button {
+      position: relative;
+      display: inline-block;
+      background: #3498db;
+      color: white;
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 30px;
+      font-weight: bold;
+      transition: background 0.3s ease;
+      margin-bottom: 20px;
+    }
+    .back-button:hover {
+      background: #2980b9;
+    }
+    .navigation-buttons {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .nav-button {
+      background: #3498db;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+      padding: 8px 16px;
+      border-radius: 30px;
+      margin: 0 5px;
+    }
+    .nav-button:hover {
+      background: #2980b9;
+    }
+
+    /* Mobile Responsive Design */
+    @media screen and (max-width: 768px) {
+      .mobile-menu-toggle {
+        display: flex !important;
+      }
+      
+      .navbar {
+        display: none;
+      }
+      
+      .container {
+        margin: 10px;
+        padding: 15px;
+        margin-top: 80px;
+      }
+      
+      h1 {
+        font-size: 1.5em;
+      }
+      
+      .process-inputs {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      
+      .process-card {
+        padding: 12px;
+      }
+      
+      .process-card h3 {
+        font-size: 1em;
+      }
+      
+      input, select, button {
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+      
+      .gantt-container {
+        overflow-x: auto;
+      }
+      
+      table {
+        font-size: 0.8em;
+      }
+      
+      th, td {
+        padding: 6px;
+        font-size: 0.8em;
+      }
+      }
+      
+    @media screen and (max-width: 480px) {
+      .container {
+        margin: 5px;
+        padding: 10px;
+        margin-top: 80px;
+      }
+      
+      h1 {
+        font-size: 1.3em;
+        margin-bottom: 10px;
+      }
+      
+      .process-inputs {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      
+      .process-card {
+        padding: 8px;
+      }
+      
+      .process-card h3 {
+        font-size: 0.95em;
+        margin-bottom: 8px;
+      }
+      
+      input, select, button {
+        padding: 6px 10px;
+        font-size: 11px;
+      }
+      
+      .gantt-container {
+        overflow-x: auto;
+        padding-bottom: 10px;
+      }
+      
+      .gantt-chart {
+        height: 40px;
+      }
+      
+      .gantt-block {
+        height: 40px;
+        font-size: 0.8em;
+      }
+      
+      table {
+        font-size: 0.75em;
+        overflow-x: auto;
+        display: block;
+        white-space: nowrap;
+      }
+      
+      th, td {
+        padding: 4px;
+        font-size: 0.75em;
+      }
+      
+      .results h2 {
+        font-size: 1em;
+      }
+
+      .mobile-sidebar {
+        width: 100%;
+        right: -100%;
+      }
+
+      .mobile-menu-toggle {
+        top: 15px;
+        left: 15px;
+        width: 45px;
+        height: 45px;
+        font-size: 1.3em;
+        border-radius: 35px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Mobile Menu Toggle -->
+  <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+  
+  <!-- Mobile Overlay -->
+  <div class="mobile-overlay" onclick="closeMobileMenu()"></div>
+  
+  <!-- Mobile Sidebar -->
+  <div class="mobile-sidebar" id="mobileSidebar">
+    <div class="mobile-sidebar-header">
+      <a href="index.html" class="mobile-sidebar-brand">OS Visualizer</a>
+      <button class="mobile-close-btn" onclick="closeMobileMenu()">×</button>
+    </div>
+    <div class="mobile-nav-links">
+      <a href="producer_consumer.html" class="mobile-nav-link">Producer-Consumer</a>
+      <a href="dining_philosophers.html" class="mobile-nav-link">Dining Philosophers</a>
+      <a href="readers_writers.html" class="mobile-nav-link">Readers-Writers</a>
+      <a href="bankers_algorithm.html" class="mobile-nav-link">Banker's Algorithm</a>
+      <a href="memory_management.html" class="mobile-nav-link">Memory Management</a>
+      <a href="resource_allocation.html" class="mobile-nav-link">Resource Allocation</a>
+      <a href="Try _OS.html" class="mobile-nav-link active">CPU Scheduling</a>
+    </div>
+    <button class="mobile-theme-toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+  </div>
+
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-brand">OS Visualizer</a>
+      <div class="nav-links">
+        <a href="producer_consumer.html" class="nav-link">Producer-Consumer</a>
+        <a href="dining_philosophers.html" class="nav-link">Dining Philosophers</a>
+        <a href="readers_writers.html" class="nav-link">Readers-Writers</a>
+        <a href="bankers_algorithm.html" class="nav-link">Banker's Algorithm</a>
+        <a href="memory_management.html" class="nav-link">Memory Management</a>
+        <a href="resource_allocation.html" class="nav-link">Resource Allocation</a>
+                        <a href="Try _OS.html" class="nav-link active">CPU Scheduling</a>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+        </div>
+    </nav>
+
+  <div class="container">
+    <h1>CPU Scheduling</h1>
+
+    <label for="numProcesses">Number of Processes</label>
+    <input type="number" id="numProcesses" min="1" value="3" />
+
+    <label for="algorithm">Algorithm</label>
+    <select id="algorithm">
+      <option value="FCFS">First Come First Serve (FCFS)</option>
+      <option value="SJFnp">Shortest Job First (Non-Preemptive)</option>
+      <option value="SJFp">Shortest Job First (Preemptive)</option>
+      <option value="RR">Round Robin</option>
+      <option value="Prioritynp">Priority (Non-Preemptive)</option>
+      <option value="Priorityp">Priority (Preemptive)</option>
+    </select>
+
+    <div id="quantumContainer" style="display: none;">
+      <label for="quantum">Time Quantum</label>
+      <input type="number" id="quantum" min="1" value="2" />
+    </div>
+
+    <div id="priorityOrderContainer" style="display: none;">
+      <label for="priorityOrder">Priority Order</label>
+      <select id="priorityOrder">
+        <option value="lower">Lower number = Higher priority</option>
+        <option value="higher">Higher number = Higher priority</option>
+      </select>
+    </div>
+
+    <button onclick="generateInputs()">Generate Process Inputs</button>
+
+    <div class="process-inputs" id="processInputs"></div>
+
+    <button onclick="runScheduler()">Run Scheduler</button>
+
+    <div class="results" id="results" style="display: none;">
+      <h2>Gantt Chart</h2>
+      <div class="gantt-container">
+        <div id="ganttChart" class="gantt-chart"></div>
+      </div>
+      
+      <h2>Process Metrics</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Process</th>
+            <th>Arrival Time</th>
+            <th>Burst Time</th>
+            <th>Completion Time</th>
+            <th>Turnaround Time</th>
+            <th>Waiting Time</th>
+          </tr>
+        </thead>
+        <tbody id="metricsBody"></tbody>
+        <tfoot id="metricsSummary"></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // Show/hide quantum input based on algorithm selection
+    document.getElementById("algorithm").addEventListener("change", function() {
+      const quantum = document.getElementById("quantumContainer");
+      const priorityOrder = document.getElementById("priorityOrderContainer");
+      
+      // Show quantum for Round Robin
+      quantum.style.display = this.value === "RR" ? "block" : "none";
+      
+      // Show priority order for priority algorithms
+      priorityOrder.style.display = 
+        (this.value === "Prioritynp" || this.value === "Priorityp") ? "block" : "none";
+    });
+
+    // Update priority labels when priority order changes
+    document.getElementById("priorityOrder").addEventListener("change", function() {
+      // Regenerate inputs to update priority labels
+      if (document.getElementById("processInputs").children.length > 0) {
+        generateInputs();
+      }
+    });
+
+    // Input validation function
+    function validateInput(input) {
+      // Remove any non-numeric characters except decimal point
+      input.value = input.value.replace(/[^0-9.]/g, '');
+      
+      // Ensure only one decimal point
+      const parts = input.value.split('.');
+      if (parts.length > 2) {
+        input.value = parts[0] + '.' + parts.slice(1).join('');
+      }
+      
+      // Convert to number and check if negative
+      const num = parseFloat(input.value);
+      if (num < 0) {
+        input.value = 0;
+      }
+      
+      // Ensure minimum value of 1 for certain fields
+      if (input.id === 'numProcesses' || input.id === 'quantum') {
+        if (num < 1) {
+          input.value = 1;
+        }
+      }
+    }
+
+    // Add input validation to all number inputs
+    document.addEventListener('DOMContentLoaded', function() {
+      const numberInputs = document.querySelectorAll('input[type="number"]');
+      numberInputs.forEach(input => {
+        input.addEventListener('input', function() {
+          validateInput(this);
+        });
+        input.addEventListener('blur', function() {
+          validateInput(this);
+        });
+      });
+    });
+
+    // Generate process input fields
+    function generateInputs() {
+      const num = parseInt(document.getElementById("numProcesses").value) || 3;
+      const container = document.getElementById("processInputs");
+      const priorityOrder = document.getElementById("priorityOrder").value;
+      container.innerHTML = "";
+      
+      // Determine priority label based on current setting
+      let priorityLabel = "Priority";
+      if (priorityOrder === 'lower') {
+        priorityLabel = "Priority (lower is higher)";
+      } else {
+        priorityLabel = "Priority (higher is higher)";
+      }
+      
+      for (let i = 0; i < num; i++) {
+        const card = document.createElement("div");
+        card.className = "process-card";
+        card.innerHTML = `
+          <h3>Process ${i + 1}</h3>
+          <label for="arrival${i}">Arrival Time</label>
+          <input type="number" id="arrival${i}" min="0" value="${i}" oninput="validateInput(this)" onblur="validateInput(this)" />
+          <label for="burst${i}">Burst Time</label>
+          <input type="number" id="burst${i}" min="1" value="1" oninput="validateInput(this)" onblur="validateInput(this)" />
+          <label for="priority${i}">${priorityLabel}</label>
+          <input type="number" id="priority${i}" min="1" value="1" oninput="validateInput(this)" onblur="validateInput(this)" />
+        `;
+        container.appendChild(card);
+      }
+    }
+
+    // Main scheduler function
+    function runScheduler() {
+      const num = parseInt(document.getElementById("numProcesses").value) || 3;
+      const algo = document.getElementById("algorithm").value;
+      const quantum = parseInt(document.getElementById("quantum").value) || 2;
+      const priorityOrder = document.getElementById("priorityOrder").value;
+      const processes = [];
+
+      // Collect process data
+      for (let i = 0; i < num; i++) {
+        processes.push({
+          id: i + 1,
+          arrivalTime: parseInt(document.getElementById(`arrival${i}`).value) || 0,
+          burstTime: parseInt(document.getElementById(`burst${i}`).value) || 1,
+          priority: parseInt(document.getElementById(`priority${i}`).value) || 1,
+          remainingTime: parseInt(document.getElementById(`burst${i}`).value) || 1
+        });
+      }
+
+      // Deep copy processes to prevent modifications to original
+      const processesCopy = JSON.parse(JSON.stringify(processes));
+
+      // Run selected algorithm
+      let schedule;
+      switch (algo) {
+        case "FCFS":
+          schedule = fcfs(processesCopy);
+          break;
+        case "SJFnp":
+          schedule = sjfNonPreemptive(processesCopy);
+          break;
+        case "SJFp":
+          schedule = sjfPreemptive(processesCopy);
+          break;
+        case "RR":
+          schedule = roundRobin(processesCopy, quantum);
+          break;
+        case "Prioritynp":
+          schedule = priorityNonPreemptive(processesCopy, priorityOrder);
+          break;
+        case "Priorityp":
+          schedule = priorityPreemptive(processesCopy, priorityOrder);
+          break;
+      }
+
+      // Calculate and display results
+      const metrics = calculateMetrics(processes, schedule);
+      drawGanttChart(schedule);
+      displayMetrics(metrics);
+      
+      // Show results section
+      document.getElementById("results").style.display = "block";
+    }
+
+    // FCFS Algorithm
+    function fcfs(processes) {
+      const sortedProcesses = [...processes].sort((a, b) => a.arrivalTime - b.arrivalTime);
+      let currentTime = 0;
+      const schedule = [];
+      
+      for (const process of sortedProcesses) {
+        // Start time is max of current time or arrival time
+        const startTime = Math.max(currentTime, process.arrivalTime);
+        const endTime = startTime + process.burstTime;
+        
+        schedule.push({
+          id: process.id,
+          start: startTime,
+          end: endTime
+        });
+        
+        currentTime = endTime;
+      }
+      
+      return schedule;
+    }
+
+    // SJF Non-Preemptive
+    function sjfNonPreemptive(processes) {
+      let currentTime = 0;
+      const schedule = [];
+      const remainingProcesses = [...processes];
+      
+      while (remainingProcesses.length > 0) {
+        // Find available processes at this time
+        const availableProcesses = remainingProcesses.filter(p => p.arrivalTime <= currentTime);
+        
+        if (availableProcesses.length === 0) {
+          // No processes available, move time to next arrival
+          const nextArrival = Math.min(...remainingProcesses.map(p => p.arrivalTime));
+          currentTime = nextArrival;
+          continue;
+        }
+        
+        // Find shortest job among available processes
+        const shortestJob = availableProcesses.reduce(
+          (shortest, current) => current.burstTime < shortest.burstTime ? current : shortest,
+          availableProcesses[0]
+        );
+        
+        // Schedule the job
+        const startTime = currentTime;
+        const endTime = startTime + shortestJob.burstTime;
+        
+        schedule.push({
+          id: shortestJob.id,
+          start: startTime,
+          end: endTime
+        });
+        
+        // Update current time and remove process from remaining
+        currentTime = endTime;
+        const index = remainingProcesses.findIndex(p => p.id === shortestJob.id);
+        remainingProcesses.splice(index, 1);
+      }
+      
+      return schedule;
+    }
+
+    // SJF Preemptive
+    function sjfPreemptive(processes) {
+      const schedule = [];
+      let currentTime = 0;
+      let currentProcess = null;
+      const remainingProcesses = processes.map(p => ({...p}));
+      
+      // Find the earliest arrival time
+      const earliestArrival = Math.min(...remainingProcesses.map(p => p.arrivalTime));
+      currentTime = earliestArrival;
+      
+      // Continue until all processes are completed
+      while (remainingProcesses.some(p => p.remainingTime > 0)) {
+        // Find available processes at this time
+        const availableProcesses = remainingProcesses.filter(p => 
+          p.arrivalTime <= currentTime && p.remainingTime > 0
+        );
+        
+        if (availableProcesses.length === 0) {
+          // No processes available, move time to next arrival
+          const nextArrivalTimes = remainingProcesses
+            .filter(p => p.remainingTime > 0 && p.arrivalTime > currentTime)
+            .map(p => p.arrivalTime);
+          
+          if (nextArrivalTimes.length === 0) break;
+          currentTime = Math.min(...nextArrivalTimes);
+          continue;
+        }
+        
+        // Find shortest remaining time process
+        const shortestJob = availableProcesses.reduce(
+          (shortest, current) => current.remainingTime < shortest.remainingTime ? current : shortest,
+          availableProcesses[0]
+        );
+        
+        // If we're switching processes or starting a new one
+        if (!currentProcess || currentProcess.id !== shortestJob.id) {
+          if (currentProcess) {
+            // Add current segment to schedule
+            const lastEntry = schedule[schedule.length - 1];
+            lastEntry.end = currentTime;
+          }
+          
+          // Start new process segment
+          schedule.push({
+            id: shortestJob.id,
+            start: currentTime,
+            end: currentTime + 1 // Will be updated later
+          });
+          
+          currentProcess = shortestJob;
+        }
+        
+        // Execute for 1 time unit
+        currentTime++;
+        shortestJob.remainingTime--;
+        
+        // Update end time of current segment
+        const lastEntry = schedule[schedule.length - 1];
+        lastEntry.end = currentTime;
+        
+        // If process completes, reset current process
+        if (shortestJob.remainingTime === 0) {
+          currentProcess = null;
+        }
+      }
+      
+      return schedule;
+    }
+
+    // Round Robin Algorithm
+    function roundRobin(processes, quantum) {
+      let currentTime = 0;
+      const schedule = [];
+      const remainingProcesses = processes.map(p => ({...p}));
+      
+      // Find earliest arrival
+      const earliestArrival = Math.min(...remainingProcesses.map(p => p.arrivalTime));
+      currentTime = earliestArrival;
+      
+      // Ready queue - stores indices of processes in remainingProcesses array
+      let readyQueue = [];
+      
+      // Initialize queue with processes that arrive at start time
+      readyQueue = remainingProcesses
+        .filter(p => p.arrivalTime <= currentTime)
+        .map(p => remainingProcesses.findIndex(rp => rp.id === p.id));
+      
+      while (readyQueue.length > 0 || remainingProcesses.some(p => p.remainingTime > 0 && p.arrivalTime > currentTime)) {
+        if (readyQueue.length === 0) {
+          // No processes in queue, find next arrival
+          const nextArrivalTimes = remainingProcesses
+            .filter(p => p.remainingTime > 0 && p.arrivalTime > currentTime)
+            .map(p => p.arrivalTime);
+          
+          currentTime = Math.min(...nextArrivalTimes);
+          
+          // Add newly arrived processes to queue
+          remainingProcesses.forEach((p, index) => {
+            if (p.arrivalTime === currentTime && p.remainingTime > 0) {
+              readyQueue.push(index);
+            }
+          });
+          
+          continue;
+        }
+        
+        // Get next process from queue
+        const processIndex = readyQueue.shift();
+        const process = remainingProcesses[processIndex];
+        
+        if (process.remainingTime === 0) continue; // Skip if process already completed
+        
+        // Calculate execution time (min of quantum and remaining time)
+        const executionTime = Math.min(quantum, process.remainingTime);
+        const startTime = currentTime;
+        const endTime = startTime + executionTime;
+        
+        // Add to schedule
+        schedule.push({
+          id: process.id,
+          start: startTime,
+          end: endTime
+        });
+        
+        // Update process remaining time
+        process.remainingTime -= executionTime;
+        currentTime = endTime;
+        
+        // Add newly arrived processes to queue
+        remainingProcesses.forEach((p, index) => {
+          if (p.arrivalTime > startTime && p.arrivalTime <= endTime && 
+              p.remainingTime > 0 && !readyQueue.includes(index)) {
+            readyQueue.push(index);
+          }
+        });
+        
+        // If process not finished, add back to queue
+        if (process.remainingTime > 0) {
+          readyQueue.push(processIndex);
+        }
+      }
+      
+      return schedule;
+    }
+
+    // Priority Non-Preemptive
+    function priorityNonPreemptive(processes, priorityOrder) {
+      let currentTime = 0;
+      const schedule = [];
+      const remainingProcesses = [...processes];
+      
+      while (remainingProcesses.length > 0) {
+        // Find available processes
+        const availableProcesses = remainingProcesses.filter(p => p.arrivalTime <= currentTime);
+        
+        if (availableProcesses.length === 0) {
+          // No processes available, move time to next arrival
+          const nextArrival = Math.min(...remainingProcesses.map(p => p.arrivalTime));
+          currentTime = nextArrival;
+          continue;
+        }
+        
+        // Find highest priority job (lower number = higher priority)
+        const highestPriority = availableProcesses.reduce(
+          (highest, current) => {
+            if (priorityOrder === 'lower') {
+              return current.priority < highest.priority ? current : highest;
+            } else {
+              return current.priority > highest.priority ? current : highest;
+            }
+          },
+          availableProcesses[0]
+        );
+        
+        // Schedule the job
+        const startTime = currentTime;
+        const endTime = startTime + highestPriority.burstTime;
+        
+        schedule.push({
+          id: highestPriority.id,
+          start: startTime,
+          end: endTime
+        });
+        
+        // Update time and remove process
+        currentTime = endTime;
+        const index = remainingProcesses.findIndex(p => p.id === highestPriority.id);
+        remainingProcesses.splice(index, 1);
+      }
+      
+      return schedule;
+    }
+
+    // Priority Preemptive
+    function priorityPreemptive(processes, priorityOrder) {
+      const schedule = [];
+      let currentTime = 0;
+      let currentProcess = null;
+      const remainingProcesses = processes.map(p => ({...p}));
+      
+      // Find earliest arrival
+      const earliestArrival = Math.min(...remainingProcesses.map(p => p.arrivalTime));
+      currentTime = earliestArrival;
+      
+      while (remainingProcesses.some(p => p.remainingTime > 0)) {
+        // Find available processes
+        const availableProcesses = remainingProcesses.filter(p => 
+          p.arrivalTime <= currentTime && p.remainingTime > 0
+        );
+        
+        if (availableProcesses.length === 0) {
+          // No processes available, move time to next arrival
+          const nextArrivalTimes = remainingProcesses
+            .filter(p => p.remainingTime > 0 && p.arrivalTime > currentTime)
+            .map(p => p.arrivalTime);
+          
+          if (nextArrivalTimes.length === 0) break;
+          currentTime = Math.min(...nextArrivalTimes);
+          continue;
+        }
+        
+        // Find highest priority process
+        const highestPriority = availableProcesses.reduce(
+          (highest, current) => {
+            if (priorityOrder === 'lower') {
+              return current.priority < highest.priority ? current : highest;
+            } else {
+              return current.priority > highest.priority ? current : highest;
+            }
+          },
+          availableProcesses[0]
+        );
+        
+        // If we're switching processes or starting a new one
+        if (!currentProcess || currentProcess.id !== highestPriority.id) {
+          if (currentProcess) {
+            // Add current segment to schedule
+            const lastEntry = schedule[schedule.length - 1];
+            lastEntry.end = currentTime;
+          }
+          
+          // Start new process segment
+          schedule.push({
+            id: highestPriority.id,
+            start: currentTime,
+            end: currentTime + 1 // Will be updated later
+          });
+          
+          currentProcess = highestPriority;
+        }
+        
+        // Execute for 1 time unit
+        currentTime++;
+        highestPriority.remainingTime--;
+        
+        // Update end time
+        const lastEntry = schedule[schedule.length - 1];
+        lastEntry.end = currentTime;
+        
+        // If process completes, reset current process
+        if (highestPriority.remainingTime === 0) {
+          currentProcess = null;
+        }
+      }
+      
+      return schedule;
+    }
+
+    // Calculate metrics
+    function calculateMetrics(processes, schedule) {
+      // Get completion time for each process
+      const completionTimes = {};
+      
+      // Find the latest completion time for each process
+      for (const entry of schedule) {
+        if (!completionTimes[entry.id] || entry.end > completionTimes[entry.id]) {
+          completionTimes[entry.id] = entry.end;
+        }
+      }
+      
+      // Calculate metrics for each process
+      const processMetrics = processes.map(p => {
+        const completionTime = completionTimes[p.id];
+        const turnaroundTime = completionTime - p.arrivalTime;
+        const waitingTime = turnaroundTime - p.burstTime;
+        
+        return {
+          id: p.id,
+          arrivalTime: p.arrivalTime,
+          burstTime: p.burstTime,
+          completionTime,
+          turnaroundTime,
+          waitingTime
+        };
+      });
+      
+      // Calculate averages
+      const avgTurnaroundTime = processMetrics.reduce((sum, p) => sum + p.turnaroundTime, 0) / processMetrics.length;
+      const avgWaitingTime = processMetrics.reduce((sum, p) => sum + p.waitingTime, 0) / processMetrics.length;
+      
+      return {
+        processes: processMetrics,
+        avgTurnaroundTime,
+        avgWaitingTime
+      };
+    }
+
+    // Draw Gantt chart using absolute positioning
+    function drawGanttChart(schedule) {
+      const chart = document.getElementById("ganttChart");
+      chart.innerHTML = "";
+      
+      // Calculate dimensions
+      const totalTime = Math.max(...schedule.map(entry => entry.end));
+      const timeScale = 40; // pixels per time unit
+      const chartWidth = totalTime * timeScale;
+      
+      // Set chart width
+      chart.style.width = chartWidth + "px";
+      
+      // Add time markers at each unit
+      for (let t = 0; t <= totalTime; t++) {
+        const timeLabel = document.createElement("div");
+        timeLabel.className = "time-label";
+        timeLabel.innerText = t;
+        timeLabel.style.left = (t * timeScale) + "px";
+        chart.appendChild(timeLabel);
+        
+        const timeLine = document.createElement("div");
+        timeLine.className = "time-line";
+        timeLine.style.left = (t * timeScale) + "px";
+        chart.appendChild(timeLine);
+      }
+      
+      // Get a color for each process (consistent colors)
+      const colors = [
+        "#3498db", "#e74c3c", "#2ecc71", "#f39c12", "#9b59b6", 
+        "#1abc9c", "#d35400", "#34495e", "#7f8c8d", "#16a085"
+      ];
+      
+      // Draw blocks for each interval
+      for (const entry of schedule) {
+        const block = document.createElement("div");
+        block.className = "gantt-block";
+        
+        // Calculate position and size
+        const left = entry.start * timeScale;
+        const width = (entry.end - entry.start) * timeScale;
+        
+        // Set style
+        block.style.left = left + "px";
+        block.style.width = width + "px";
+        block.style.backgroundColor = colors[(entry.id - 1) % colors.length];
+        
+        // Set content
+        block.textContent = `P${entry.id}`;
+        
+        // Add to chart
+        chart.appendChild(block);
+      }
+    }
+
+    // Display metrics in table
+    function displayMetrics(metrics) {
+      const tbody = document.getElementById("metricsBody");
+      const tfoot = document.getElementById("metricsSummary");
+      
+      tbody.innerHTML = "";
+      for (const p of metrics.processes) {
+        tbody.innerHTML += `
+          <tr>
+            <td>P${p.id}</td>
+            <td>${p.arrivalTime}</td>
+            <td>${p.burstTime}</td>
+            <td>${p.completionTime}</td>
+            <td>${p.turnaroundTime}</td>
+            <td>${p.waitingTime}</td>
+          </tr>
+        `;
+      }
+      
+      tfoot.innerHTML = `
+        <tr>
+          <td colspan="4"><strong>Average</strong></td>
+          <td><strong>${metrics.avgTurnaroundTime.toFixed(2)}</strong></td>
+          <td><strong>${metrics.avgWaitingTime.toFixed(2)}</strong></td>
+        </tr>
+      `;
+    }
+
+    // Theme toggle functionality
+    function toggleTheme() {
+      const body = document.body;
+      const button = document.querySelector('.theme-toggle');
+      const mobileButton = document.querySelector('.mobile-theme-toggle');
+      
+      if (body.getAttribute('data-theme') === 'dark') {
+        body.removeAttribute('data-theme');
+        if (button) button.innerHTML = '🌙';
+        if (mobileButton) mobileButton.innerHTML = '🌙 Toggle Theme';
+        localStorage.setItem('theme', 'light');
+      } else {
+        body.setAttribute('data-theme', 'dark');
+        if (button) button.innerHTML = '☀️';
+        if (mobileButton) mobileButton.innerHTML = '☀️ Toggle Theme';
+        localStorage.setItem('theme', 'dark');
+      }
+    }
+
+    // Mobile menu functions
+    function toggleMobileMenu() {
+      const sidebar = document.getElementById('mobileSidebar');
+      const overlay = document.querySelector('.mobile-overlay');
+      
+      sidebar.classList.add('open');
+      overlay.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeMobileMenu() {
+      const sidebar = document.getElementById('mobileSidebar');
+      const overlay = document.querySelector('.mobile-overlay');
+      
+      sidebar.classList.remove('open');
+      overlay.classList.remove('show');
+      document.body.style.overflow = '';
+    }
+
+    // Load saved theme on page load
+    window.addEventListener('DOMContentLoaded', function() {
+      const savedTheme = localStorage.getItem('theme');
+      const button = document.querySelector('.theme-toggle');
+      const mobileButton = document.querySelector('.mobile-theme-toggle');
+      
+      if (savedTheme === 'dark') {
+        document.body.setAttribute('data-theme', 'dark');
+        if (button) button.innerHTML = '☀️';
+        if (mobileButton) mobileButton.innerHTML = '☀️ Toggle Theme';
+      }
+
+      // Close mobile menu when clicking on a link
+      const mobileLinks = document.querySelectorAll('.mobile-nav-link');
+      mobileLinks.forEach(link => {
+        link.addEventListener('click', closeMobileMenu);
+      });
+    });
+
+    // Initialize with default values
+    window.onload = function() {
+      generateInputs();
+    };
+  </script>
+</body>
+</html>
